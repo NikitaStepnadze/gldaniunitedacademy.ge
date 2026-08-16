@@ -1,0 +1,366 @@
+/*
+ * Site-specific overrides, loaded last so it wins over the theme stylesheets.
+ * Everything here exists because our photography differs from the demo's.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Preloader — club crest with the theme's spinner above it
+ *
+ * The crest is added here rather than in the page markup because all 14 pages
+ * in content/pages carry byte-identical preloader markup; a background image on
+ * the container covers every one of them at once and keeps the HTML untouched.
+ *
+ * Layout is a flex COLUMN in `column-reverse`. The spinner is the first child
+ * in source order but has to render above the logo, and reversing the column
+ * does that without needing an `order` on a theme-owned element.
+ *
+ * The theme absolutely positions the spinner (top/left 50% with a negative
+ * margin) to centre it in the old layout. That has to be undone or it lifts out
+ * of the flex flow and sits back on top of the crest.
+ * ------------------------------------------------------------------------ */
+.preload-container {
+	display: flex;
+	flex-direction: column-reverse;
+	justify-content: center;
+	align-items: center;
+	gap: 34px;
+}
+
+.preload-container .swapping-squares-spinner {
+	position: relative;
+	top: auto;
+	left: auto;
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+/*
+ * The crest as a ::before rather than a background on the container itself:
+ * the container is a full-viewport fixed overlay, so a background would have to
+ * be sized and positioned against the whole screen and could not take part in
+ * the flex column. A pseudo-element is a real flex item, so the gap above keeps
+ * it a fixed distance from the spinner at any viewport size.
+ */
+.preload-container::before {
+	content: "";
+	flex: 0 0 auto;
+	width: clamp(132px, 20vw, 190px);
+	aspect-ratio: 1;
+	background-image: url("../images/logo-gua.png");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+}
+
+/*
+ * The overlay is white, so the theme's gold spinner is legible as-is, but the
+ * crest carries its own navy — pairing them needs no recolouring. Fading the
+ * crest in avoids a hard pop on first paint, since the PNG decodes slightly
+ * after the overlay itself is painted.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	.preload-container::before {
+		animation: gua-preload-logo-in 420ms ease-out both;
+	}
+}
+
+@keyframes gua-preload-logo-in {
+	from {
+		opacity: 0;
+		transform: scale(0.94);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero slider height
+ *
+ * The banner has no explicit height -- it is driven entirely by the padding on
+ * .slide-item (132px / 214px in the theme). Trimming both brings the fold up
+ * without touching the slider's internals.
+ * ------------------------------------------------------------------------ */
+.tf-slider-widget .slide-item {
+	padding-top: 104px;
+	padding-bottom: 150px;
+}
+
+@media only screen and (max-width: 991px) {
+	.tf-slider-widget .slide-item {
+		padding-top: 80px;
+		padding-bottom: 100px;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * About-us image collage
+ *
+ * Two slanted parallelograms that read as windows cut out of ONE photograph:
+ * the image continues across the gap between them, rather than each shape
+ * holding a separate picture.
+ *
+ * That is what drives the implementation. The photo cannot be an <img> inside
+ * each shape -- two <img>s means two independently-positioned pictures, and
+ * the subject jumps at the seam. Instead both shapes share a single background
+ * image sized to the *whole collage* (--collage-w x --collage-h) and each one
+ * offsets that background by its own position within the collage, so the two
+ * windows sample different parts of the same continuous image.
+ *
+ * The demo's diagonal slices were baked into its mask1/mask2 PNGs as
+ * transparent corners; ours come from clip-path, so the intrinsic sizes have
+ * to be pinned or the photos render at full resolution and blow the section
+ * open. The layout rules below duplicate shortcodes.css, which the theme never
+ * loads on any page.
+ * ------------------------------------------------------------------------ */
+.tf-about-us .image-wraper .media {
+	/*
+	 * ONE fluid base unit drives the whole collage; every other measurement is a
+	 * ratio of it. That is what makes the section responsive -- the shapes scale
+	 * with the viewport instead of being pinned to fixed pixel sizes, so there is
+	 * no breakpoint at which they suddenly jump to a new hardcoded geometry.
+	 *
+	 * clamp() keeps it sane at the extremes: it tracks the viewport in the middle
+	 * but stops shrinking on small phones and stops growing on wide monitors.
+	 */
+	--u: clamp(240px, 34vw, 560px);
+
+	/* Widths. The left window is the narrower of the two. */
+	--shape-a-w: calc(var(--u) * 0.56);
+	--shape-b-w: calc(var(--u) * 0.80);
+
+	/*
+	 * Heights. Both windows share a top edge; the right one is the tall one and
+	 * sets the collage height.
+	 *
+	 * The left window plus the checkerboard beneath it add up to exactly the
+	 * right window's height -- that is the alignment being asked for, so it is
+	 * expressed as arithmetic rather than left to hand-tuned numbers. The
+	 * checkerboard's own height and the space above it are the two other terms,
+	 * so the three always sum to --shape-b-h at every viewport size.
+	 */
+	--shape-b-h: calc(var(--u) * 0.99);
+	--checker-w: calc(var(--u) * 0.28);
+	--checker-h: calc(var(--checker-w) * (74 / 181));  /* graphic.png is 181x74 */
+	--checker-space: calc(var(--u) * 0.035);           /* clear gap under the photo */
+	--shape-a-h: calc(var(--shape-b-h) - var(--checker-h) - var(--checker-space));
+
+	/*
+	 * NEGATIVE, so the two shapes interlock instead of sitting side by side.
+	 * Their edges lean, so square boxes placed next to each other leave a
+	 * wedge-shaped gap that widens down the collage -- shrinking a positive gap
+	 * never closes it. Pulling the right window back by most of one slant run
+	 * slides it into that wedge, which is what actually tightens the spacing.
+	 */
+	--gap: calc(var(--slant) * -0.72);
+
+	/*
+	 * Slant is a LENGTH, not a percentage. A percentage resolves against each
+	 * element's own width, so two windows of different widths would lean at two
+	 * different angles and the edges would visibly splay. Deriving it from the
+	 * shared base unit gives both the same run while still scaling fluidly.
+	 */
+	--slant: calc(var(--u) * 0.26);
+
+	/* The photo spans both windows plus the seam, so the two sample one
+	   continuous image. Height tracks the taller window. */
+	--collage-w: calc(var(--shape-a-w) + var(--gap) + var(--shape-b-w));
+	--collage-h: var(--shape-b-h);
+
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
+	position: relative;
+	padding-right: 49px;
+	padding-left: 3px;
+}
+
+/*
+ * Both windows: same photo, same slant. Only the background offset differs,
+ * which is what makes them read as one picture behind a mask.
+ *
+ * NOTE the shapes have different heights, and --slant is the horizontal run
+ * over the FULL height of each. A shorter shape therefore needs a proportionally
+ * shorter run to hold the same angle; that is what --slant-a below corrects.
+ * Using one run for both would make the short shape lean more steeply than the
+ * tall one -- the exact splay this whole approach is meant to avoid.
+ */
+.tf-about-us .image-wraper img.mask-media,
+.tf-about-us .image-wraper .media > img.image-gr {
+	background-image: url("../images/about/collage.jpg");
+	background-size: var(--collage-w) var(--collage-h);
+	background-repeat: no-repeat;
+	position: relative;
+	z-index: 2;
+}
+
+/* Right window: the reference shape, leaning by the full --slant run. */
+.tf-about-us .image-wraper .media > img.image-gr {
+	-webkit-clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+	clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+/* Left window: run scaled by its share of the right window's height, so both
+   edges sit at the same angle. */
+.tf-about-us .image-wraper img.mask-media {
+	--slant-a: calc(var(--slant) * (var(--shape-a-h) / var(--shape-b-h)));
+	-webkit-clip-path: polygon(var(--slant-a) 0, 100% 0, calc(100% - var(--slant-a)) 100%, 0 100%);
+	clip-path: polygon(var(--slant-a) 0, 100% 0, calc(100% - var(--slant-a)) 100%, 0 100%);
+}
+
+/*
+ * The markup still carries two <img> elements, and their src files would show
+ * through on top of the shared background. Making them transparent turns each
+ * one into a pure window: the element keeps its box, clip-path and background,
+ * but contributes no picture of its own.
+ */
+.tf-about-us .image-wraper img.mask-media,
+.tf-about-us .image-wraper .media > img.image-gr {
+	opacity: 0.9999;      /* keeps the element composited on its own layer */
+	object-fit: cover;
+	color: transparent;   /* hides the alt text if the src 404s */
+}
+
+.tf-about-us .image-wraper img.mask-media {
+	content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E");
+}
+
+.tf-about-us .image-wraper .media > img.image-gr {
+	content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E");
+}
+
+/*
+ * Left window: shorter than the right one and top-aligned with it, so both
+ * share a top edge and the left one stops short at the bottom. That shortfall
+ * is what leaves the checkerboard below it visible.
+ *
+ * With no vertical offset the background needs no vertical correction either --
+ * both windows sample the same photo from the same top edge.
+ */
+.tf-about-us .image-wraper img.mask-media {
+	width: var(--shape-a-w);
+	height: var(--shape-a-h);
+	margin-left: 12px;
+	margin-top: 0;
+	background-position: 0 0;
+}
+
+/*
+ * Checkerboard graphic, sitting in the clear space below the shorter left
+ * window.
+ *
+ * Anchored from the top rather than the bottom: the media box is as tall as the
+ * taller RIGHT window, so `bottom` would push this far below the shape it
+ * belongs to. Deriving `top` from --shape-a-h pins it to the left window's lower
+ * edge instead.
+ *
+ * Because --shape-a-h was defined as (right height - this graphic - the space
+ * above it), the left window and this graphic together end exactly level with
+ * the right window's bottom edge -- at any viewport size, with no per-breakpoint
+ * correction.
+ */
+.tf-about-us .image-wraper img.shape-media {
+	position: absolute;
+	left: 0;
+	top: calc(var(--shape-a-h) + var(--checker-space));
+	bottom: auto;
+	z-index: 3;
+	width: var(--checker-w);
+	height: auto;
+}
+
+/*
+ * Right window: wider and taller, separated from the left by --gap rather than
+ * overlapping it (the theme's -91px margin interlocked the two; the reference
+ * has clear space between them instead).
+ *
+ * Its background is shifted left by exactly the distance from the collage's
+ * origin to this shape, so the photo continues from where the left window
+ * stops -- the gap reads as a slice cut out of one picture.
+ */
+.tf-about-us .image-wraper .media > img.image-gr {
+	width: var(--shape-b-w);
+	height: var(--shape-b-h);
+	margin-left: var(--gap);
+	background-position: calc(-1 * (var(--shape-a-w) + var(--gap))) 0;
+}
+
+/*
+ * Gold accent slash. It sits BEHIND the photos (z-index 1) and is deliberately
+ * overlapped by the right window, so only the sliver past that window's edge
+ * shows -- which is the thin accent the reference has. Anchoring it fully clear
+ * of the window instead would expose the whole graphic and it would read as a
+ * solid block.
+ *
+ * Positioned off the right window's edge and sized from the same base unit, so
+ * the overlap stays proportional as the collage scales.
+ */
+.tf-about-us .image-wraper .media .intersect-img {
+	position: absolute;
+	left: calc(var(--shape-a-w) + var(--gap) + var(--shape-b-w) - var(--u) * 0.16);
+	bottom: 8%;
+	right: auto;
+	z-index: 1;
+	width: calc(var(--u) * 0.22);
+	height: auto;
+}
+
+.tf-about-us .about-box {
+	padding-left: 7px;
+}
+
+.tf-about-us .about-box > img {
+	margin-top: 28px;
+	margin-bottom: 28px;
+}
+
+.tf-about-us .about-box p.post {
+	max-width: 522px;
+	color: var(--secondary);
+}
+
+.tf-about-us .about-button-group {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+	flex-wrap: wrap;
+}
+
+.tf-about-us .infor-about {
+	display: flex;
+	align-items: center;
+}
+
+.tf-about-us .infor-about img {
+	width: 52px;
+	height: 52px;
+	object-fit: cover;
+	margin-right: 12px;
+	border: 1px solid var(--primary);
+	border-radius: 100px;
+}
+
+/*
+ * Below the md breakpoint the two columns stack, so the collage is centred
+ * rather than left-aligned against a full-width text block.
+ *
+ * No shape variables are redeclared here. The old version re-pinned every
+ * dimension in pixels at each breakpoint, which both defeated the fluid scaling
+ * and broke the "left window + checkerboard == right window" relationship, since
+ * that sum only holds while the heights stay derived. Sizing now comes entirely
+ * from --u, so the collage scales continuously and this block only has to deal
+ * with the change in layout.
+ */
+@media only screen and (max-width: 991px) {
+	.tf-about-us .image-wraper .media {
+		/* Once stacked, the collage has the full column to itself and no longer
+		   has to share the row with the text, so it can take a larger share of
+		   the viewport than the two-column case allows. */
+		--u: clamp(230px, 52vw, 420px);
+
+		justify-content: center;
+		padding-right: 0;
+		margin-bottom: 40px;
+	}
+}

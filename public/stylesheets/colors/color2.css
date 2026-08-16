@@ -1,0 +1,156 @@
+/**
+  * Color
+  * Border Color
+  * Background Color
+  * Shadow Color
+*/
+
+/* Color
+-------------------------------------------------------------- */
+a:hover, a:focus,
+.page-template-front-page .flat-portfolio .portfolio-filter > li.active a, 
+.page-template-front-page .flat-portfolio .portfolio-filter > li a:hover,
+.pricing-table .features li:before,
+#mainnav ul li a:hover,
+.entry .entry-title a:hover,
+.bottom .copyright a:hover,
+.pricing-table.style1 .features li:before,
+.flat-callout-box .icon i,
+.flat-latest-blog.style1 .Category li a,
+.widget.widget-popular-news ul li .text h6 a:hover,
+.comment-post .comment-meta .comment-author a:hover,
+.flat-portfolio .portfolio-filter > li.active a, 
+.flat-portfolio .portfolio-filter > li a:hover,
+.flat-portfolio .portfolio-filter > li:hover:before,
+.breadcrumbs a:hover,
+.flat-portfolio .item .title-portfolio a:hover,
+.widget ul li a:hover,
+.header-inner .language-wrap ul li a:hover,
+.header.style2 .setting-wrap ul li a:hover {
+	color: #cb4437;
+}
+
+/* Border Color
+-------------------------------------------------------------- */
+.singleimages-border:before,
+.flat-counter .icon-counter,
+.flat-tabs.advantage ul.menu-tab li.active,
+.flat-iconbox .icon,
+.owl-theme .owl-dots .owl-dot.active span, 
+.owl-theme .owl-dots .owl-dot:hover span,
+.flat-progress-item .progress-icon,
+.flat-button.button-background:hover,
+.flat-testimonials.style1.owl-theme .owl-dots .owl-dot.active span, 
+.flat-testimonials.style1.owl-theme .owl-dots .owl-dot:hover span,
+.flat-testimonials.style1.style2.owl-theme .owl-dots .owl-dot.active span, 
+.flat-testimonials.style1.style2.owl-theme .owl-dots .owl-dot:hover span,
+.widget.widget-search #searchform #s:focus,
+.widget ul li:before,
+.widget ul li:after,
+.widget.widget-tags .tag-list a.active,
+.blog-pagination .flat-pagination li.active,
+.blog-pagination .flat-pagination li a:hover,
+.blog-single .entry .wrap-share .nav-links a:hover span,
+.widget.widget-tags .tag-list a:hover {
+	border-color: #cb4437 ;
+}
+
+.pricing-table .plan:before,
+.flat-testimonials.style1 .owl-item:hover blockquote:before, 
+.flat-testimonials-style1.active blockquote:before,
+.flat-testimonials.style1 .owl-item:hover blockquote:before, 
+.flat-testimonials-style1.active blockquote:before {
+	border-top: 10px solid #cb4437;
+}
+
+.entry .feature-post .type-post:after {
+	border-color: transparent #cb4437 transparent #cb4437;
+}
+
+.appointment-form textarea:hover, 
+.appointment-form input[type="text"]:hover, 
+.appointment-form input[type="password"]:hover, 
+.appointment-form input[type="datetime"]:hover,
+textarea:hover, 
+input[type="text"]:hover, 
+input[type="email"]:hover,
+textarea:focus,
+input[type="text"]:focus,
+input[type="email"]:focus  {
+	border-color: transparent transparent #cb4437 transparent;
+}
+
+.flat-contact-form  input[type="text"]:focus,
+.flat-contact-form  input[type="password"]:focus,
+.flat-contact-form  input[type="email"]:focus {
+	border: 1px solid #cb4437;
+}
+
+.flat-contact-form textarea:hover,
+.flat-contact-form input[type="text"]:hover,
+.flat-contact-form input[type="email"]:hover,
+.flat-contact-form input[type="password"]:hover,
+.flat-contact-form input[type="datetime"]:hover {		
+    border-color: #cb4437 #cb4437 #cb4437 #cb4437;
+}
+
+#mainnav ul li ul li {
+	border-top: 1px solid #cb4437;
+}
+
+.header.style2 #mainnav > ul > li.home > a {
+	border: 2px solid #cb4437;
+}
+
+/* Background Color
+-------------------------------------------------------------- */
+.switcher-container h2 a,
+.flat-counter .icon-counter:before,
+.flat-tabs.advantage ul.menu-tab li.active:before,
+.flat-iconbox .icon:before,
+.flat-portfolio .portfolio-filter > li.active a:after,
+.flat-portfolio .portfolio-filter > li a:before,
+.flat-portfolio .item .link,
+.flat-team.style1 .social li a:hover,
+.pricing-table .plan,
+.pricing-table .button,
+.flat-testimonials-single blockquote:after,
+.appointment-form .input-wrap:hover:before, 
+.appointment-form .textarea-wrap:hover:before,
+.ui-widget-header,
+.flat-testimonials-single blockquote:after,
+.entry .feature-post .type-post,
+.go-top,
+.flat-testimonials-single .avatar:before,
+.flex-direction-nav a:hover,
+.flat-button.button-background:hover:before,
+.flat-button.button-background:hover,
+.flat-button.button-background:hover:after,
+.flat-team.style2 .social li a:hover,
+.flat-row.row-counter,
+.flat-portfolio.v2 .item .item-caption,
+.flat-testimonials.style1 .owl-item:hover blockquote, 
+.flat-testimonials-style1.active blockquote,
+.home2 .flat-row.row-callus,
+.flat-counter.style2:after, 
+.flat-counter.style2:before,
+.flat-team.style1.img-small .social li a:hover,
+.flat-testimonials.style1.style2 .flat-testimonials.style1 .owl-item:hover blockquote, 
+.flat-testimonials.style1.style2 .flat-testimonials-style1.active blockquote,
+.flat-socials li a:hover,
+.widget.widget-tags .tag-list a.active,
+.blog-pagination .flat-pagination li.active,
+.blog-pagination .flat-pagination li a:hover,
+blockquote,
+.blog-single .entry .wrap-share .nav-links a:hover span,
+.comment-post .comment-meta .comment-reply,
+.comment-form fieldset:hover:before,
+.flat-portfolio .portfolio-filter > li a:before,
+.flat-portfolio .item .link,
+.widget.widget-tags .tag-list a:hover,
+.header.style1 #mainnav ul li.home a:before, 
+.header.style1 #mainnav ul li.home a:after,
+.header.style1 #mainnav > ul > li > a:before, 
+.header.style1 #mainnav > ul > li > a:after {
+	background-color: #cb4437;
+}

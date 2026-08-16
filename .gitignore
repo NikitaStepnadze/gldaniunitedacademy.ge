@@ -1,0 +1,19 @@
+# dependencies
+/node_modules
+
+# next.js build output
+/.next/
+/out/
+
+# misc
+.DS_Store
+*.pem
+.env*.local
+.vercel
+
+# original-resolution image masters (downscaled copies live in public/)
+/assets-source/
+
+# purchased theme package; already imported into content/ and public/
+# via `npm run sync:html`. Not needed to build the site.
+/zunzo-package/

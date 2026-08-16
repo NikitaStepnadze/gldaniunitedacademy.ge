@@ -1,0 +1,451 @@
+/**
+ * Gldani United Academy — brand theme
+ * ------------------------------------------------------------------
+ * Loaded last in the cascade (see content/manifest.json), so everything
+ * here overrides the stock Zunzo palette without editing vendor files.
+ *
+ *  1. Fonts        — Georgian display + body faces
+ *  2. Palette      — navy / gold / white
+ *  3. Accent remap — the theme's hard-coded lime greens
+ *  4. Dark surface — the theme's near-black blocks become club navy
+ *  5. Component fixes that don't follow from the variables alone
+ */
+
+/* 1. Fonts
+-------------------------------------------------------------- */
+
+/* Display face — headings and large type.
+   Full Mkhedruli coverage (verified: all 33 letters + digits), but only 148
+   glyphs and a single weight. */
+@font-face {
+    font-family: "Dachi The Lynx";
+    src: url("/geofont/dachi-the-lynx.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Body face — everything else.
+   BPG SuperSquare: Mkhedruli, Latin, digits, punctuation and the typographic
+   quotes the testimonials use are all present (199 glyphs, verified). */
+@font-face {
+    font-family: "BPG SuperSquare";
+    src: url("/geofont/bpg-supersquare.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --font-display: "Dachi The Lynx", "BPG SuperSquare", sans-serif;
+    --font-body: "BPG SuperSquare", sans-serif;
+}
+
+/* Both faces ship a single 400 weight. Without this the browser synthesises
+   the theme's 500/600/700 requests by smearing the strokes, which Georgian
+   letterforms show far more than Latin does. */
+body,
+input,
+textarea,
+button,
+select {
+    font-synthesis: none;
+}
+
+/* The theme hard-codes "Jost"/"Oswald" in 117 rules across style.css and
+   shortcodes.css, many of them more specific than a plain element selector
+   (`.title-box .title-section`, `p.post`, `#mainnav ul li a`, …). Matching
+   each one would be brittle, so the body face is applied with a universal
+   selector and the display face is then re-applied to titles below.
+   `:not()` keeps the icon fonts, which are glyph-mapped and must not be
+   substituted, and leaves the map embed to its own styling. */
+*:not([class*="icon-"]):not([class^="icon"]):not(i):not(.fa):not(.pswp *):not(iframe):not(iframe *) {
+    font-family: var(--font-body);
+}
+
+/* Icon fonts map glyphs to private-use codepoints — swapping their family
+   replaces every icon with a missing-glyph box. */
+i[class*="icon-"],
+i[class^="icon"],
+[class*=" icon-"]::before,
+[class^="icon-"]::before,
+.icon-new svg,
+.fa {
+    font-family: inherit;
+}
+
+i[class*="icon-"],
+i[class^="icon"] {
+    font-family: "icomoon" !important;
+}
+
+.material-icons {
+    font-family: "Material Icons" !important;
+}
+
+/* ID-based theme rules (`#mainnav ul li a`) outrank the universal selector
+   above on specificity, so the navigation needs naming directly. */
+#mainnav ul li a,
+#mainnav-mobi ul > li > a,
+#mainnav ul.submenu li a,
+.header-right .login a,
+.btn-contact,
+.flat-button,
+.tf-btn,
+input[type="button"],
+input[type="reset"],
+input[type="submit"],
+button {
+    font-family: var(--font-body);
+}
+
+/* Display face — headings, hero/banner titles and the big counter numerals.
+   Listed after the universal rule so it wins on equal specificity, with
+   `!important` where the theme's own rules are more specific still. */
+h1, h2, h3, h4, h5, h6,
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
+.tf-title,
+.title-display,
+.title-section,
+.title-banner,
+.title-blog,
+.title-register,
+.title-benefit,
+.title-course,
+.title-event,
+.title-portfolio,
+.name-member,
+.entry-title,
+.entry-title a,
+.counter-number,
+.numb-count,
+.number,
+.number-m,
+.tf-banner .title,
+.flat-title-slider,
+.title-widget,
+.slogan-word,
+.page-title-heading .title {
+    font-family: var(--font-display) !important;
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0.01em;
+}
+
+/* Mkhedruli has no capitals; uppercasing is a no-op for Georgian but still
+   applies to stray Latin, which then looks inconsistent next to it. */
+h1, h2, h3, h4, h5, h6,
+.tf-title,
+.tf-btn,
+.btn-contact,
+.widget-title,
+.tf-banner .title,
+.menu > li > a {
+    text-transform: none;
+}
+
+/* Georgian has no ascender/descender rhythm as pronounced as Latin, so the
+   theme's tight display leading crowds the letterforms. */
+h1, h2, h3 {
+    line-height: 1.25;
+}
+
+h4, h5, h6 {
+    line-height: 1.35;
+}
+
+body {
+    line-height: 1.65;
+}
+
+/* 2. Palette
+-------------------------------------------------------------- */
+:root {
+    /* Club colours, sampled from the crest. */
+    --navy: #16244f;
+    --navy-deep: #101a3a;
+    --navy-soft: #22346b;
+    --gold: #c9a227;
+    --gold-light: #e0bf55;
+    --gold-dark: #a5821c;
+
+    /* `--white` is declared only in shortcodes.css, which the manifest never
+       loads — so the ~40 `color: var(--white)` rules in style.css (footer
+       social icons, widget titles, the dark-block headings) resolve to an
+       invalid value and silently fall back to inherited colour. Defining it
+       here restores all of them. */
+    --white: #ffffff;
+
+    /* Theme variable remap. `--primary` drives ~112 declarations across the
+       stock stylesheets, so pointing it at gold does most of the work. */
+    --primary: var(--gold);
+    --black: var(--navy);
+    --grey: var(--navy-deep);
+    --line2: #2c3d70;
+    --surface: #f5f7fb;
+    --line: #dde3ef;
+    --linear: #dde3ef;
+    --linear-one: #dde3ef;
+    --secondary: #4a5570;
+    --secondary-one: #8a93a8;
+    --interactive: #2f5fbf;
+}
+
+/* Gold on white fails contrast at body sizes, so links and inline accents
+   use the darker cut. The bright gold is reserved for large type, fills and
+   borders, where it stays legible. */
+a {
+    color: var(--navy);
+}
+
+a:hover,
+a:focus {
+    color: var(--gold-dark);
+}
+
+/* 3. Accent remap — hard-coded lime that bypasses --primary
+-------------------------------------------------------------- */
+.social-icon-footer a:hover,
+.swiper-testimonial .owl-controls .owl-nav div.owl-prev:hover,
+.swiper-testimonial .owl-controls .owl-nav div.owl-next:hover,
+.discount-item.active,
+.view-cart-wrap .time {
+    background-color: var(--gold);
+    border-color: var(--gold);
+}
+
+.input-new-letter button.btn-submit:hover {
+    background-color: var(--gold-dark);
+}
+
+.minicar-body ul.cart_list::-webkit-scrollbar-thumb {
+    background: linear-gradient(216.56deg, var(--gold) 5.32%, var(--gold-light) 94.32%);
+}
+
+/* The theme paints these SVG icons with a literal lime fill attribute. */
+svg [fill="#C3E92D"],
+svg [fill="#c3e92d"],
+svg [fill="#CEF531"],
+svg [fill="#cef531"] {
+    fill: var(--gold);
+}
+
+/* 4. Dark surfaces become club navy
+-------------------------------------------------------------- */
+.background-black,
+.footer.background-black,
+.tf-widget-partner.background-black,
+.tf-widget-benefit.background-black,
+.tf-widget-testimonial.background-black {
+    background-color: var(--navy);
+}
+
+.footer.background-black {
+    border-top: 3px solid var(--gold);
+}
+
+/* 5. Component fixes
+-------------------------------------------------------------- */
+
+/* Primary buttons: gold fill, navy label — the crest's own pairing. */
+.tf-btn,
+.btn-contact {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.tf-btn:hover,
+.btn-contact:hover {
+    background-color: var(--gold-dark);
+    border-color: var(--gold-dark);
+    color: var(--navy);
+}
+
+/* Header bar and mobile nav panel. */
+.header-top {
+    background-color: var(--navy-deep);
+}
+
+/* The stock bar was a light strip, so the theme paints everything inside it
+   `var(--black)` — which section 2 remaps to navy. Against the navy-deep
+   background above that is navy on navy, and the row reads as empty. The
+   contents need the light cut instead.
+   `.header-top-inner .address a` and `.social-icon a i` are the theme's own
+   selectors, matched here so these win on specificity; the plain <address>
+   element inherits no colour from either, so it is named directly. */
+.header-top-inner,
+.header-top-inner .address,
+.header-top-inner .address a,
+.header-top-inner .address address,
+.header-top-inner .address i,
+.header-top-inner .social-icon a,
+.header-top-inner .social-icon a i {
+    color: var(--white);
+}
+
+/* Gold on hover, matching the accent used everywhere else on navy. */
+.header-top-inner .address a:hover,
+.header-top-inner .address a:hover i,
+.header-top-inner .social-icon a:hover,
+.header-top-inner .social-icon a:hover i {
+    color: var(--gold-light);
+}
+
+.header.style1 {
+    background-color: var(--navy);
+}
+
+#mainnav ul.submenu {
+    background-color: var(--navy);
+    border-top: 2px solid var(--gold);
+}
+
+#mainnav ul.submenu li a:hover {
+    color: var(--gold-light);
+}
+
+/* Logo sizing.
+   The stock logos were pre-sized wordmarks, so the theme sets no dimensions
+   and simply renders them at natural size. The crest is a 1254×1254 square,
+   which would otherwise fill the viewport — it needs an explicit height. */
+.header-inner .logo img,
+#logo-mobie img {
+    width: auto;
+    height: 68px;
+    max-width: none;
+    filter: none;
+}
+
+.header-inner .logo {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.logo-footer img {
+    width: auto;
+    height: 96px;
+    margin-bottom: 20px;
+    filter: none;
+}
+
+@media only screen and (max-width: 991px) {
+    .header-inner .logo img,
+    #logo-mobie img {
+        height: 52px;
+    }
+}
+
+/* Section eyebrow labels. */
+.tf-title-wrap .sub-title,
+.sub-title {
+    color: var(--gold-dark);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+/* On navy blocks the eyebrow needs the light cut to stay readable. */
+.background-black .tf-title-wrap .sub-title,
+.background-black .sub-title {
+    color: var(--gold-light);
+}
+
+/* Scroll-to-top pill. */
+.progress-wrap {
+    background-color: var(--gold);
+}
+
+/* Hero headline.
+   The slide titles carry a hand-placed line break tuned for desktop. At
+   mobile widths the line is already wrapping, so the extra break splits the
+   phrase awkwardly — drop it there and let the text reflow on its own. */
+@media only screen and (max-width: 767px) {
+    br.hero-br {
+        display: none;
+    }
+}
+
+/* Parallax CTA banner.
+   Its background is now a darkened photo, so the headline needs the light
+   cut; the theme's default is near-black and would disappear into it. */
+.tf-widget-banner .title-banner {
+    color: var(--white);
+}
+
+.tf-widget-banner span.sale {
+    color: var(--navy);
+}
+
+/* Map.
+   The theme's Mapbox token expired, so the map is a keyless Google embed.
+   `.map-contact` keeps a fixed 586px height from the theme, which left a gap
+   under the shorter iframe — make the iframe fill its container instead. */
+.map-contact {
+    height: 460px;
+    overflow: hidden;
+}
+
+.map-contact iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+/* Contact details.
+   The theme uppercases these headings, which is harmless for Mkhedruli but
+   mangles the Latin-script email: `text-transform` drops nothing, yet the
+   uppercased address reads as one run and the `@` loses its shape. Keep the
+   email in its natural case. */
+.list-contact-us .inner h6 {
+    text-transform: none;
+    letter-spacing: 0;
+    word-break: break-word;
+}
+
+/* Slogan band — replaces the template's sponsor-logo marquee. The wrapper
+   keeps its original class so the theme's scroll animation still drives it.
+   The wrapper is a flex row, so the words need flex-shrink:0 or they squash
+   into each other once their combined width exceeds the container. */
+.sologan-logo {
+    gap: 0;
+    overflow: hidden;
+}
+
+.sologan-logo .slogan-word {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 30px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.2;
+    color: var(--white);
+    white-space: nowrap;
+    opacity: 0.92;
+}
+
+/* Gold dot separator between words, in place of the removed logo gutters. */
+.sologan-logo .slogan-word::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-left: 30px;
+    border-radius: 50%;
+    background-color: var(--gold);
+    opacity: 0.55;
+}
+
+.sologan-logo .slogan-word:nth-child(even) {
+    color: var(--gold);
+}
+
+@media only screen and (max-width: 767px) {
+    .sologan-logo .slogan-word {
+        font-size: 19px;
+        padding: 0 16px;
+    }
+
+    .sologan-logo .slogan-word::after {
+        margin-left: 16px;
+    }
+}
