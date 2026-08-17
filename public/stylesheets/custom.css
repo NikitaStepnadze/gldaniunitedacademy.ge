@@ -364,3 +364,202 @@
 		margin-bottom: 40px;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+ * "რატომ ჩვენ" — scroll-driven ball sequence in the benefit circle
+ *
+ * The theme shipped a still photo with a YouTube lightbox in the middle of the
+ * benefit ring. It is now a canvas playing a 96-frame WebP sequence of a ball
+ * hitting the net, scrubbed by scroll position rather than by time.
+ *
+ * The section is a NORMAL block in the document flow. It has no extra height,
+ * no sticky positioning and no scroll track, so the sections above and below it
+ * sit against it exactly as they do everywhere else on the page and never drift
+ * apart while the film plays.
+ *
+ * An earlier version pinned the section by wrapping it in a track taller than
+ * the viewport. That is the conventional scrollytelling approach, but the extra
+ * track height is real layout: it pushes the neighbouring sections apart, and
+ * they visibly slide during the scrub. Since nothing here may move except the
+ * video, the hold is done in script instead -- see benefit-sequence.js, which
+ * briefly holds the page still, advances the frames, then releases it. The
+ * layout stays exactly as the theme has it.
+ * ------------------------------------------------------------------------ */
+.benefit-scroll-track {
+	position: relative;
+}
+
+/* The theme's own section padding, unchanged. */
+.benefit-scroll-stage .tf-widget-benefit {
+	width: 100%;
+	padding: 80px 0 60px 0;
+}
+
+/* --- the circle ---------------------------------------------------------- */
+.benefit-sequence {
+	/* Matches the footprint of the still photo this replaced: the circle sits in
+	   the middle column as one element of the composition, not as a hero that
+	   dominates it. Capped in px so it does not keep growing on wide monitors. */
+	--size: min(19vw, 44vh, 370px);
+
+	/*
+	 * width + aspect-ratio, NOT width + height. The parent column is a flex
+	 * container, so the stretch default overrides the height and lets the box
+	 * resolve taller than it is wide -- and a border-radius:100% box that is
+	 * 450x560 renders as an egg, not a circle. Deriving the height from the
+	 * ratio and opting out of the stretch keeps it round at every viewport.
+	 */
+	width: var(--size);
+	aspect-ratio: 1 / 1;
+	height: auto;
+	align-self: center;
+	flex: 0 0 auto;
+	margin: 0 auto;
+	padding: 0;
+	/* The theme's 1px ring sits on .benefit-video; the sequence keeps it and
+	   adds the translucent inner ring that used to live on the img. */
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.benefit-sequence-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 100%;
+	/* Same 24px translucent ring the theme put around the still photo, moved
+	   to the canvas so the frames sit inside it exactly as the photo did. */
+	border: clamp(10px, 1.6vh, 24px) solid rgba(255, 177, 133, 0.2);
+	background-color: #0b1017;
+	object-fit: cover;
+}
+
+/*
+ * Progress ring — the one signature device. It traces the same circle the ring
+ * already describes, so it reads as the aperture filling rather than as a new
+ * widget. Stroke length is driven from JS through --benefit-progress.
+ */
+.benefit-sequence-ring {
+	position: absolute;
+	inset: 0;
+	/* inset:0 already matches the square parent; width/height:100% on an SVG in
+	   this flex context resolves against the wrong axis and makes the ring an
+	   ellipse independently of the canvas. */
+	width: auto;
+	height: auto;
+	transform: rotate(-90deg);
+	pointer-events: none;
+}
+
+.benefit-sequence-ring-track,
+.benefit-sequence-ring-fill {
+	fill: none;
+	stroke-width: 1.1;
+	vector-effect: non-scaling-stroke;
+}
+
+.benefit-sequence-ring-track {
+	stroke: rgba(255, 255, 255, 0.12);
+}
+
+.benefit-sequence-ring-fill {
+	stroke: var(--primary);
+	stroke-linecap: round;
+	/* r=48 -> circumference 301.6; the dash is the drawn arc and the gap hides
+	   the rest, so offsetting by (1 - progress) sweeps it clockwise. */
+	stroke-dasharray: 301.6;
+	stroke-dashoffset: calc(301.6 * (1 - var(--benefit-progress, 0)));
+}
+
+/* --- the four benefits --------------------------------------------------- */
+
+/*
+ * The benefit copy is static. It is fully readable the moment the section is on
+ * screen and never fades, slides or reveals -- the film in the circle is the
+ * only thing scroll drives. These rules exist to hold that: the theme ships
+ * `wow`/`animated` classes on these elements sitewide, and this section's
+ * markup drops them, so nothing here should reintroduce entrance motion.
+ */
+.benefit-scroll-stage .benefit-item,
+.benefit-scroll-stage .benefit-number span.number {
+	opacity: 1;
+	transform: none;
+	animation: none;
+}
+
+/*
+ * The engine sets .is-ready once the first frame is on the canvas. Until then
+ * the decorative infographics stay hidden so they do not float around an empty
+ * circle on a cold load.
+ */
+.benefit-sequence .shape-video-1,
+.benefit-sequence .shape-video-2,
+.benefit-sequence .shape-video-3,
+.benefit-sequence .shape-video-4 {
+	opacity: 0;
+	transition: opacity 700ms ease;
+}
+
+.benefit-sequence.is-ready .shape-video-1,
+.benefit-sequence.is-ready .shape-video-2,
+.benefit-sequence.is-ready .shape-video-3,
+.benefit-sequence.is-ready .shape-video-4 {
+	opacity: 1;
+}
+
+/* --- narrow screens ------------------------------------------------------ */
+
+/*
+ * Below 991px the theme stacks the three columns. The script does not hold the
+ * page on touch devices -- see benefit-sequence.js -- so the sequence plays off
+ * the section's own travel through the viewport there. No layout override is
+ * needed for that; only the circle is resized for the stacked column.
+ */
+@media only screen and (max-width: 991px) {
+	.benefit-scroll-stage .tf-widget-benefit {
+		padding: 60px 0 50px 0;
+	}
+
+	.benefit-sequence {
+		--size: min(64vw, 320px);
+
+		margin: 8px auto 40px;
+	}
+}
+
+/*
+ * The theme's 80px benefit number is sized for the three-column desktop row. Once
+ * the columns stack it shares a single narrow row with the copy, and at 390px the
+ * number overflows the container and is clipped at the screen edge. Letting it
+ * shrink and capping the row keeps both parts on screen.
+ */
+@media only screen and (max-width: 767px) {
+	.benefit-scroll-stage .benefit-item {
+		gap: 12px;
+	}
+
+	.benefit-scroll-stage .benefit-number {
+		flex: 0 0 auto;
+	}
+
+	.benefit-scroll-stage .benefit-number span.number {
+		font-size: clamp(44px, 13vw, 64px);
+		line-height: 1.1;
+	}
+
+	.benefit-scroll-stage .benefit-content {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+}
+
+/*
+ * Reduced motion: no hold, no scrubbing. The script paints one frame from the
+ * middle of the sequence -- the ball at the deepest point of the net -- and the
+ * section behaves like the static composition it replaced. The progress ring is
+ * hidden because it has nothing left to report.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.benefit-sequence-ring-fill {
+		display: none;
+	}
+}

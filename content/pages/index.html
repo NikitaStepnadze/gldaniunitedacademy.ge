@@ -362,6 +362,16 @@
     </div><!-- Widget-about  -->
 
     <!-- wiget benefits -->
+    <!--
+      The benefit widget is wrapped in a scroll track so the section can pin.
+      `benefit-scroll-track` is tall; `benefit-scroll-stage` sticks to the top of
+      the viewport for the length of that extra height, which holds the section
+      still while the scroll distance drives the frame sequence in the circle.
+      The pin is native sticky positioning, not a scroll lock, so the wheel,
+      keyboard and scrollbar all keep working normally.
+    -->
+    <div class="benefit-scroll-track" id="benefit-scroll-track">
+    <div class="benefit-scroll-stage">
     <div class="tf-widget-benefit background-black">
         <div class="themeflat-container">
             <div class="tf-benefit">
@@ -373,40 +383,51 @@
                 <div class="benefit-wrap-content">
                     <div class="row">
                         <div class="col-md-4 benefit-on-left">
-                            <div class="benefit-item">
+                            <!--
+                              data-benefit-step is the sequence progress (0-1) at which this
+                              benefit lands. The theme's `wow` classes are deliberately absent
+                              on the four items: WOW.js reveals on viewport entry, and every
+                              item enters the viewport together the moment the section pins,
+                              so all four would fire at once. The scroll engine reveals them
+                              instead, one per stage of the ball hitting the net.
+                            -->
+                            <div class="benefit-item" data-benefit-step="0.10">
                                 <div class="benefit-content">
-                                    <h6 class="title-benefit wow fadeInLeft animated">
+                                    <h6 class="title-benefit">
                                         ჯანმრთელობა
                                     </h6>
-                                    <p class="description-benefit wow fadeInLeft animated">
+                                    <p class="description-benefit">
                                         რეგულარული ვარჯიში აძლიერებს ბავშვის ორგანიზმს, აუმჯობესებს კოორდინაციასა და გამძლეობას.
                                     </p>
                                 </div>
                                 <div class="benefit-number">
-                                    <span class="number wow zoomIn animated">01</span>
+                                    <span class="number">01</span>
                                 </div>
                             </div>
-                            <div class="benefit-item">
+                            <div class="benefit-item" data-benefit-step="0.35">
                                 <div class="benefit-content">
-                                    <h6 class="title-benefit wow fadeInLeft animated">
+                                    <h6 class="title-benefit">
                                         თავდაჯერებულობა
                                     </h6>
-                                    <p class="description-benefit wow fadeInLeft animated">
+                                    <p class="description-benefit">
                                         მოედანზე მიღწეული პატარა გამარჯვებები ბავშვს უვითარებს რწმენას საკუთარი შესაძლებლობების მიმართ.
                                     </p>
                                 </div>
                                 <div class="benefit-number">
-                                    <span class="number wow zoomIn animated">02</span>
+                                    <span class="number">02</span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 benefit-center ">
-                            <div class="benefit-video">
-
-                                <img class="video" src="/images/retinal/video.jpg" alt="">
-                                <a href="https://www.youtube.com/watch?v=eI_LjETc_Ak" class="popup-youtube">
-                                    <i class="icon-play3"></i>
-                                </a>
+                            <div class="benefit-video benefit-sequence" id="benefit-sequence">
+                                <canvas class="benefit-sequence-canvas" id="benefit-sequence-canvas" width="720"
+                                    height="720" role="img"
+                                    aria-label="ბურთი ეხვევა ბადეში — კადრები იცვლება გვერდის გადაადგილებისას"></canvas>
+                                <svg class="benefit-sequence-ring" viewBox="0 0 100 100" aria-hidden="true"
+                                    focusable="false">
+                                    <circle class="benefit-sequence-ring-track" cx="50" cy="50" r="48" />
+                                    <circle class="benefit-sequence-ring-fill" cx="50" cy="50" r="48" />
+                                </svg>
                                 <img class="shape-video-1" src="/images/retinal/Inforgraphic.png" alt="">
                                 <img class="shape-video-2" src="/images/retinal/Inforgraphic1.png" alt="">
                                 <img class="shape-video-3" src="/images/retinal/Inforgraphic2.png" alt="">
@@ -415,27 +436,27 @@
 
                         </div>
                         <div class="col-md-4 benefit-on-right">
-                            <div class="benefit-item">
+                            <div class="benefit-item" data-benefit-step="0.60">
                                 <div class="benefit-number">
-                                    <span class="number wow zoomIn animated">03</span>
+                                    <span class="number">03</span>
                                 </div>
                                 <div class="benefit-content">
-                                    <h6 class="title-benefit wow fadeInRight animated">
+                                    <h6 class="title-benefit">
                                         გუნდურობა
                                     </h6>
-                                    <p class="description-benefit wow fadeInRight animated">
+                                    <p class="description-benefit">
                                         ბავშვი სწავლობს მეგობრობას, ურთიერთპატივისცემასა და საერთო მიზნისთვის ბრძოლას.
                                     </p>
                                 </div>
                             </div>
-                            <div class="benefit-item">
+                            <div class="benefit-item" data-benefit-step="0.82">
                                 <div class="benefit-number">
-                                    <span class="number wow zoomIn animated">04</span>
+                                    <span class="number">04</span>
                                 </div>
                                 <div class="benefit-content">
-                                    <h6 class="title-benefit wow fadeInRight animated">
+                                    <h6 class="title-benefit">
                                         დისციპლინა</h6>
-                                    <p class="description-benefit wow fadeInRight animated">
+                                    <p class="description-benefit">
                                         განრიგი, წესები და რეგულარობა ავითარებს პასუხისმგებლობას, რაც სკოლაშიც ეხმარება.
                                     </p>
                                 </div>
@@ -446,7 +467,9 @@
                 </div>
             </div>
         </div>
-    </div><!-- wiget benefits -->
+    </div>
+    </div><!-- benefit-scroll-stage -->
+    </div><!-- benefit-scroll-track --><!-- wiget benefits -->
 
     <!-- Widget event -->
     <div class="tf-widget-event main-content-medium">

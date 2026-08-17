@@ -82,6 +82,10 @@
       "type": "text/javascript"
     },
     {
+      "src": "/javascript/benefit-sequence.js",
+      "type": "text/javascript"
+    },
+    {
       "src": "/javascript/model-viewer.min.js",
       "type": "module"
     },

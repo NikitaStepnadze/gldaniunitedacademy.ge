@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "52177-467701518_medium.mp4",
+    "duration": 7.34,
+    "resolution": "1280x720",
+    "fps": 25.0,
+    "codec": "h264",
+    "total_source_frames": 183
+  },
+  "extraction": {
+    "start": 0.3,
+    "duration": 7.0,
+    "crop": "720x720+170+0",
+    "note": "Square crop centred on the ball so the frames fill a circular aperture without upscaling."
+  },
+  "frames": {
+    "target_count": 96,
+    "format": "webp",
+    "quality": 68,
+    "naming_pattern": "frame-{NNNN}.webp"
+  },
+  "recommended_scroll_height": "320vh",
+  "desktop": {
+    "resolution": "720x720",
+    "actual_count": 96,
+    "total_bytes": 2068480,
+    "total_mb": 1.97
+  },
+  "mobile": {
+    "resolution": "480x480",
+    "actual_count": 96,
+    "total_bytes": 1254400,
+    "total_mb": 1.2
+  }
+}
