@@ -46,7 +46,7 @@
 	flex: 0 0 auto;
 	width: clamp(132px, 20vw, 190px);
 	aspect-ratio: 1;
-	background-image: url("../images/logo-gua.png");
+	background-image: url("../gua_nobg.png");
 	background-repeat: no-repeat;
 	background-position: center;
 	background-size: contain;
@@ -372,27 +372,88 @@
  * benefit ring. It is now a canvas playing a 96-frame WebP sequence of a ball
  * hitting the net, scrubbed by scroll position rather than by time.
  *
- * The section is a NORMAL block in the document flow. It has no extra height,
- * no sticky positioning and no scroll track, so the sections above and below it
- * sit against it exactly as they do everywhere else on the page and never drift
- * apart while the film plays.
+ * THE PIN IS NATIVE STICKY POSITIONING, NOT A SCROLL LOCK.
  *
- * An earlier version pinned the section by wrapping it in a track taller than
- * the viewport. That is the conventional scrollytelling approach, but the extra
- * track height is real layout: it pushes the neighbouring sections apart, and
- * they visibly slide during the scrub. Since nothing here may move except the
- * video, the hold is done in script instead -- see benefit-sequence.js, which
- * briefly holds the page still, advances the frames, then releases it. The
- * layout stays exactly as the theme has it.
+ * An earlier version tried to hold the page from script: it let the browser
+ * scroll, then snapped it back with scrollTo on every wheel event. That fights
+ * the browser's own smooth-scroll animation, which is already in flight when
+ * the handler runs, and the result was the section visibly shaking rather than
+ * holding still.
+ *
+ * So the section pins the ordinary way instead. `benefit-scroll-track` is
+ * taller than the section; `benefit-scroll-stage` sticks inside it. While the
+ * document scrolls through the track's surplus height the stage stays put on
+ * screen -- genuinely motionless, because the browser composites it rather than
+ * anything correcting it each frame -- and that scroll distance is what drives
+ * the frame sequence. When the track runs out the stage unsticks and the page
+ * carries on scrolling normally.
+ *
+ * THE STAGE IS ITS CONTENT'S HEIGHT, NOT 100vh.
+ *
+ * This matters and an earlier version got it wrong. Making the stage a full
+ * viewport tall and centring the content inside it means the stage is ~590px of
+ * section plus ~310px of dead filler, and that filler is visible as empty bands
+ * above and below the section for the entire pin. Painting the filler navy does
+ * not fix it -- it is still empty space, just a different colour.
+ *
+ * So the stage is `height: auto`: exactly as tall as the section, no filler, no
+ * bands, and the sections above and below sit flush against it. It is centred in
+ * the viewport by the `top` offset instead -- calc((100vh - 100%) / 2), where
+ * 100% is the stage's own height -- which positions it without adding any box.
  * ------------------------------------------------------------------------ */
 .benefit-scroll-track {
 	position: relative;
+	/*
+	 * The scrub distance is added with a ::after spacer, NOT with padding-bottom.
+	 * A sticky element is constrained to its containing block's CONTENT box, and
+	 * padding is outside that box -- so padding here gave the stage no travel room
+	 * at all and it scrolled straight off screen instead of pinning. A real
+	 * in-flow block extends the content box, which is what sticky actually needs.
+	 *
+	 * Keep SCRUB_VH in benefit-sequence.js in step with the height below.
+	 */
 }
 
-/* The theme's own section padding, unchanged. */
+.benefit-scroll-track::after {
+	content: "";
+	display: block;
+	height: 150vh;
+}
+
+.benefit-scroll-stage {
+	position: sticky;
+	/*
+	 * Centres the section in the viewport WITHOUT giving the stage any height it
+	 * does not need. In a sticky `top`, a percentage resolves against the
+	 * containing block's height, so `100%` here is not usable for the element's
+	 * own size -- but the section is a known-ish height and the circle is capped
+	 * in vh, so half the difference from the viewport is the right offset and it
+	 * degrades gracefully: if the section is taller than the viewport the offset
+	 * clamps to 0 and it simply pins to the top.
+	 */
+	/*
+	 * Full-viewport stage. It used to be content-height and centred with a top
+	 * offset, which kept the flat black ground from painting bands above and
+	 * below the section. With stadium footage as the ground that reasoning
+	 * inverts: the video has to fill the screen, so the stage takes the whole
+	 * viewport and centres the composition inside itself instead.
+	 */
+	top: 0;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	background-color: var(--black);
+}
+
+/*
+ * The theme's own section padding, unchanged. The stage no longer constrains the
+ * height, so the composition needs no vh-based compression to fit -- it defines
+ * the stage's height instead of being squeezed into it.
+ */
 .benefit-scroll-stage .tf-widget-benefit {
 	width: 100%;
 	padding: 80px 0 60px 0;
+	background-color: transparent;
 }
 
 /* --- the circle ---------------------------------------------------------- */
@@ -509,12 +570,23 @@
 /* --- narrow screens ------------------------------------------------------ */
 
 /*
- * Below 991px the theme stacks the three columns. The script does not hold the
- * page on touch devices -- see benefit-sequence.js -- so the sequence plays off
- * the section's own travel through the viewport there. No layout override is
- * needed for that; only the circle is resized for the stacked column.
+ * Below 991px the theme stacks the three columns, and the stacked composition is
+ * far taller than one viewport -- it cannot be pinned without clipping it. So
+ * the pin is dropped entirely here: the track collapses to its content height
+ * and the stage becomes a normal block, which also means no scroll distance is
+ * added on the devices least able to spare it. The sequence plays off the
+ * section's own travel through the viewport instead -- see benefit-sequence.js.
  */
 @media only screen and (max-width: 991px) {
+	.benefit-scroll-track::after {
+		display: none;
+	}
+
+	.benefit-scroll-stage {
+		position: static;
+		top: auto;
+	}
+
 	.benefit-scroll-stage .tf-widget-benefit {
 		padding: 60px 0 50px 0;
 	}
@@ -560,6 +632,242 @@
  */
 @media (prefers-reduced-motion: reduce) {
 	.benefit-sequence-ring-fill {
+		display: none;
+	}
+
+	/* Nothing scrubs, so the pin has no purpose -- and its surplus height would
+	   be pure dead scroll. The section returns to a normal block in the flow. */
+	.benefit-scroll-track::after {
+		display: none;
+	}
+
+	.benefit-scroll-stage {
+		position: static;
+		top: auto;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Hero registration form
+   Replaces the old "free trial session" event card in the slider. It keeps the
+   .box-events-slide container so the theme's existing card and responsive
+   rules still apply; everything below styles the form inside it.
+--------------------------------------------------------------------------- */
+.hero-register {
+	background-color: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(2px);
+}
+
+.hero-register .title-event {
+	margin-bottom: 4px;
+}
+
+.hero-register-note {
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 14px;
+	margin-bottom: 16px;
+}
+
+.hero-register-form fieldset {
+	border: 0;
+	padding: 0;
+	margin: 0 0 10px;
+}
+
+.hero-register-form input {
+	width: 100%;
+	padding: 12px 16px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+	font-size: 15px;
+	transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.hero-register-form input::placeholder {
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-register-form input:focus {
+	outline: none;
+	border-color: var(--gold, #c9a227);
+	background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Marks a field the server or the browser rejected. */
+.hero-register-form input[aria-invalid="true"] {
+	border-color: #e57373;
+}
+
+.hero-register-submit {
+	width: 100%;
+	margin-top: 4px;
+	cursor: pointer;
+	border: 0;
+}
+
+.hero-register-submit[disabled] {
+	opacity: 0.6;
+	cursor: default;
+}
+
+/* Feedback line injected by the form handler after a submit. */
+.hero-register-status {
+	margin-top: 12px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.hero-register-status[data-state="ok"] {
+	color: #a5d6a7;
+}
+
+.hero-register-status[data-state="error"] {
+	color: #ef9a9a;
+}
+
+/* The slider is short on vertical room on phones, so tighten the form up. */
+@media only screen and (max-width: 767px) {
+	.hero-register-form input {
+		padding: 10px 14px;
+		font-size: 14px;
+	}
+
+	.hero-register-form fieldset {
+		margin-bottom: 8px;
+	}
+}
+
+/* File attachment field on the contact form. */
+.files-wrap {
+	margin-bottom: 20px;
+}
+
+.files-label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+}
+
+.files-wrap input[type="file"] {
+	display: block;
+	width: 100%;
+	padding: 12px;
+	border: 1px dashed var(--line, #dde3ef);
+	border-radius: 8px;
+	background: var(--surface, #f5f7fb);
+	cursor: pointer;
+}
+
+.files-hint {
+	display: block;
+	margin-top: 6px;
+	font-size: 13px;
+	color: var(--secondary-one, #8a93a8);
+}
+
+/* Header wordmark — crest plus the academy name
+ * ------------------------------------------------------------------------
+ * The crest alone does not read as a name at header size, so the Latin
+ * wordmark sits beside it. The theme's `#logo` is a plain block with a
+ * float, so the anchor is what turns into the flex row -- putting the flex
+ * on `#logo` itself would fight the float rather than lay out the two
+ * children.
+ *
+ * The header sits on the dark navy band, so the text takes `--white` with
+ * the gold reserved for the hover state, matching how the nav links behave.
+ * ------------------------------------------------------------------------ */
+.header-inner .logo > a,
+#logo-mobie > a {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.logo-wordmark {
+	font-family: var(--font-display);
+	font-size: 20px;
+	line-height: 1.15;
+	letter-spacing: 0.02em;
+	color: var(--white);
+	white-space: nowrap;
+	transition: color 0.2s ease;
+}
+
+.logo > a:hover .logo-wordmark {
+	color: var(--primary);
+}
+
+/* Below the desktop breakpoint the header has to hold the crest, the
+ * wordmark and the burger on one line, so the wordmark wraps to two lines
+ * at a smaller size instead of pushing the burger off the row. */
+@media (max-width: 991px) {
+	.logo-wordmark {
+		font-size: 15px;
+		white-space: normal;
+		max-width: 9em;
+	}
+}
+
+/* --- stadium video behind the pinned benefit section --------------------- */
+/*
+ * The stage already establishes a positioning context (position: sticky), so the
+ * video absolutely positions against the stage itself and covers exactly the
+ * pinned section -- no extra box, so the pin geometry and the SCRUB_VH contract
+ * with benefit-sequence.js are untouched.
+ *
+ * The stage keeps its --black background as the fallback ground: it shows while
+ * the video buffers, if the file fails, and wherever the video is suppressed
+ * (reduced motion, narrow screens).
+ */
+.benefit-scroll-stage {
+	overflow: hidden;
+}
+
+.benefit-stage-video,
+.benefit-stage-scrim {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+	pointer-events: none;
+}
+
+.benefit-stage-video {
+	object-fit: cover;
+	/* Footage of a bright green pitch behind white type: dimming and slightly
+	   desaturating it at the source means the scrim above does not have to be
+	   opaque enough to hide the stadium altogether. */
+	filter: brightness(0.55) saturate(0.85);
+}
+
+/* Vertical scrim, heaviest top and bottom where the section title and the
+   benefit rows sit, so the headings keep their contrast over moving footage. */
+.benefit-stage-scrim {
+	background: linear-gradient(
+		to bottom,
+		rgba(6, 8, 18, 0.88) 0%,
+		rgba(6, 8, 18, 0.62) 35%,
+		rgba(6, 8, 18, 0.62) 65%,
+		rgba(6, 8, 18, 0.88) 100%
+	);
+}
+
+/*
+ * The widget and the circle must sit above both layers. The stage's children are
+ * otherwise all z-index auto, so a single stacking step is enough.
+ */
+.benefit-scroll-stage .tf-widget-benefit {
+	position: relative;
+	z-index: 1;
+}
+
+/* Reduced motion: hold a still ground rather than looping footage. The rest of
+   the section already drops its pin under this query. */
+@media (prefers-reduced-motion: reduce) {
+	.benefit-stage-video {
 		display: none;
 	}
 }

@@ -1,7 +1,7 @@
 /**
-  * Name: Zunzo
+  * Name: Gldani United Academy
   * Version: 1.0
-  * Author: Themesflat
+  * Based on the Zunzo template by Themesflat
   * Author URI: http://www.themesflat.com
 */
 
@@ -443,12 +443,12 @@
     var retinaLogos = function () {
         var retina = window.devicePixelRatio > 1 ? true : false;
 
-        if (retina) {
-            $('#a2').attr({ src: 'images/logo2@.png', width: '190', height: '42' });
-            $('#a3').attr({ src: 'images/logo-v2@.png', width: '124', height: '42' });
-            $('#a1').attr({ src: 'images/logo-footer2@.png', width: '125', height: '43' });
-
-        }
+        // The theme swapped in @2x copies of its own bundled wordmark here.
+        // Our crest and footer logo are already high-resolution and are sized
+        // in CSS, so there is nothing to swap -- and doing so would overwrite
+        // the club artwork with the stock template logo on every retina
+        // display. Intentionally left as a no-op.
+        void retina;
     };//retinaLogos
 
     //video

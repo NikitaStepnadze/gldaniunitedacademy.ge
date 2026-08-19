@@ -8,8 +8,12 @@
 # misc
 .DS_Store
 *.pem
-.env*.local
 .vercel
+
+# secrets: .env holds the Appwrite API key. .env.example is committed.
+.env
+.env*.local
+!.env.example
 
 # original-resolution image masters (downscaled copies live in public/)
 /assets-source/

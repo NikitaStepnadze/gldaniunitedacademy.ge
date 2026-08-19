@@ -97,7 +97,7 @@
   "pages": {
     "about": {
       "source": "about.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -170,7 +170,7 @@
     },
     "blog-single": {
       "source": "blog-single.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -243,7 +243,7 @@
     },
     "blog": {
       "source": "blog.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -316,7 +316,7 @@
     },
     "check-out": {
       "source": "check-out.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -394,7 +394,7 @@
     },
     "contact": {
       "source": "contact.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -467,7 +467,7 @@
     },
     "event-details": {
       "source": "event-details.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -540,7 +540,7 @@
     },
     "event": {
       "source": "event.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -613,7 +613,7 @@
     },
     "homev2": {
       "source": "homev2.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -686,7 +686,7 @@
     },
     "homev3": {
       "source": "homev3.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -759,7 +759,7 @@
     },
     "index": {
       "source": "index.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -832,7 +832,7 @@
     },
     "shop-detail": {
       "source": "shop-detail.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -927,7 +927,7 @@
     },
     "shop-list": {
       "source": "shop-list.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -1005,7 +1005,7 @@
     },
     "view-cart": {
       "source": "view-cart.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",
@@ -1083,7 +1083,7 @@
     },
     "wishlist": {
       "source": "wishlist.html",
-      "title": "Zunzo Html Template",
+      "title": "გლდანი იუნაითედ აკადემია",
       "bodyClass": "header-sticky",
       "styles": [
         "/stylesheets/bootstrap.min.css",

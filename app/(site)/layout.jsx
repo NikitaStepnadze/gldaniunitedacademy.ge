@@ -1,4 +1,6 @@
-import { globalScripts, globalStyles } from '../lib/pages';
+import { getSettingsMap } from '../../lib/appwrite/content';
+import { buildColorOverrides } from '../../lib/cms';
+import { globalScripts, globalStyles } from '../../lib/pages';
 
 export const metadata = {
   metadataBase: new URL('https://gldaniunitedacademy.ge'),
@@ -56,7 +58,16 @@ export const viewport = {
  *    it is parsing. `defer` gives exactly that: document order, after parsing,
  *    before DOMContentLoaded -- matching the original template's behaviour.
  */
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Colour overrides are emitted after the theme's stylesheets so they win
+  // without !important. A settings outage just means the theme's own palette.
+  let colorOverrides = null;
+  try {
+    colorOverrides = buildColorOverrides(await getSettingsMap());
+  } catch (error) {
+    console.error('[cms] settings unavailable, using theme palette:', error.message);
+  }
+
   return (
     <html lang="ka">
       <head>
@@ -67,7 +78,7 @@ export default function RootLayout({ children }) {
           the last stylesheet in the cascade, so it lands visibly late on a cold
           load. Preloading it makes it decode alongside the stylesheets.
         */}
-        <link rel="preload" as="image" href="/images/logo-gua.png" />
+        <link rel="preload" as="image" href="/gua_nobg.png" />
         {globalStyles.map((href) => (
           // eslint-disable-next-line @next/next/no-css-tags
           <link key={href} rel="stylesheet" type="text/css" href={href} />
@@ -79,6 +90,9 @@ export default function RootLayout({ children }) {
             // eslint-disable-next-line @next/next/no-sync-scripts
             <script key={src} src={src} defer />
           )
+        )}
+        {colorOverrides && (
+          <style id="cms-colors" dangerouslySetInnerHTML={{ __html: colorOverrides }} />
         )}
       </head>
       <body className="header-sticky">{children}</body>

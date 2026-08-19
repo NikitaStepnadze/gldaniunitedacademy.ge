@@ -197,6 +197,12 @@
                                 <textarea id="comment-message" name="message" rows="3" tabindex="4"
                                     placeholder="შეტყობინება" aria-required="true"></textarea>
                             </fieldset>
+                            <fieldset class="files-wrap">
+                                <label for="enquiry-files" class="files-label">დოკუმენტები ან ფოტო (არასავალდებულო)</label>
+                                <input type="file" id="enquiry-files" name="files" multiple
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
+                                <span class="files-hint">მაქს. 5 ფაილი, თითო 10 MB-მდე</span>
+                            </fieldset>
                             <button name="submit" type="submit" id="comment-reply"
                                 class="flat-button btn-submit-comment"><span>გაგზავნა</span></button>
                         </form>

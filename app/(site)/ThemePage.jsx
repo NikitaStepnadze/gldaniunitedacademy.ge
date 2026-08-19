@@ -1,7 +1,9 @@
-import { getPageMarkup } from '../lib/pages';
+import { getContentMap } from '../../lib/appwrite/content';
+import { applyContent } from '../../lib/cms';
+import { getPageMarkup } from '../../lib/pages';
 
 /**
- * Renders one page of the original theme.
+ * Renders one page of the original theme, with any CMS overrides applied.
  *
  * The body markup is injected verbatim so the rendered DOM matches the static
  * template exactly. Stylesheets and scripts are emitted by the root layout --
@@ -14,9 +16,25 @@ import { getPageMarkup } from '../lib/pages';
  * server-rendered string against that already-mutated DOM and report a
  * mismatch on every page. The content is static server-rendered HTML that React
  * never re-renders, so opting its children out of hydration checking is safe.
+ *
+ * If the content lookup fails -- Appwrite unreachable, quota exhausted -- the
+ * page still renders with the theme's own copy. A CMS outage must not take the
+ * public site down with it.
  */
 export default async function ThemePage({ route }) {
   const markup = await getPageMarkup(route);
 
-  return <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: markup }} />;
+  let content = {};
+  try {
+    content = await getContentMap();
+  } catch (error) {
+    console.error('[cms] content unavailable, using theme defaults:', error.message);
+  }
+
+  return (
+    <div
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: applyContent(markup, content) }}
+    />
+  );
 }
