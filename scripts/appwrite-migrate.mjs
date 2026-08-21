@@ -94,10 +94,38 @@ async function waitForColumns(tableId) {
  * pairing with attribute_default_unsupported. So every `required: true` entry
  * in the schema below carries no xdefault, and defaulted columns are optional.
  */
-function column(tableId, spec, existingKeys) {
+function column(tableId, spec, existingColumns) {
   const { kind, key, ...rest } = spec;
 
-  if (existingKeys.has(key)) {
+  const existing = existingColumns.get(key);
+  if (existing) {
+    /*
+     * A column already there is left alone with one exception: a spec that has
+     * become optional while the live column is still required. That happened to
+     * `email` when the registration form stopped asking for one, and a
+     * create-only migration would never apply it -- every registration would
+     * keep failing on a required column the form no longer fills.
+     *
+     * Only this direction is automated. Tightening a column, renaming one or
+     * changing its size can fail against existing rows, so those stay manual.
+     */
+    if (existing.required && rest.required === false) {
+      const relax = {
+        string: () =>
+          tablesDB.updateStringColumn({
+            databaseId,
+            tableId,
+            key,
+            required: false,
+            size: rest.size,
+          }),
+        email: () =>
+          tablesDB.updateEmailColumn({ databaseId, tableId, key, required: false }),
+      }[kind];
+
+      if (relax) return step(`${key} (${kind}) -> optional`, relax);
+    }
+
     console.log(`  . ${key} (${kind}) (already exists)`);
     return Promise.resolve();
   }
@@ -160,10 +188,71 @@ const SCHEMA = [
     description: 'Registration enquiries from the contact form',
     columns: [
       { kind: 'string', key: 'name', size: 128, required: true },
-      { kind: 'email', key: 'email', required: true },
+      /*
+       * Optional, unlike name and phone. The registration form asks for no
+       * email at all -- parents are reached by phone -- while the contact form
+       * still requires one from its own senders. An optional column lets both
+       * write to this table, with each form enforcing its own rule.
+       */
+      { kind: 'email', key: 'email', required: false },
       { kind: 'string', key: 'phone', size: 32, required: true },
       { kind: 'string', key: 'childAge', size: 32, required: false },
       { kind: 'string', key: 'message', size: 4000, required: false },
+
+      /*
+       * Registration-form fields.
+       *
+       * All optional at the schema level even though the registration form
+       * requires them, because the contact form writes to this same table and
+       * sends none of them. Required-ness is enforced per form in
+       * validateRegistration(); making the columns required here would break
+       * every contact submission.
+       */
+      { kind: 'string', key: 'childFirstName', size: 64, required: false },
+      { kind: 'string', key: 'childLastName', size: 64, required: false },
+      { kind: 'string', key: 'childDob', size: 16, required: false },
+      // Georgian personal number is 11 digits. Sized with room to spare rather
+      // than exactly, so a stray space or a format change cannot truncate one.
+      { kind: 'string', key: 'childIdNumber', size: 32, required: false },
+      { kind: 'string', key: 'address', size: 256, required: false },
+      // School hours as submitted, two HH:MM times. Kept as separate columns
+      // rather than one joined string so either end can be read on its own.
+      { kind: 'string', key: 'schoolFrom', size: 8, required: false },
+      { kind: 'string', key: 'schoolTo', size: 8, required: false },
+
+      /*
+       * Mother's and father's details.
+       *
+       * Both sets are optional here even though the form demands a complete set
+       * for at least one parent: that is a cross-field rule a column cannot
+       * express. It is enforced in validateRegistration().
+       */
+      { kind: 'string', key: 'motherFirstName', size: 64, required: false },
+      { kind: 'string', key: 'motherLastName', size: 64, required: false },
+      { kind: 'string', key: 'motherIdNumber', size: 32, required: false },
+      { kind: 'string', key: 'motherPhone', size: 32, required: false },
+      { kind: 'string', key: 'fatherFirstName', size: 64, required: false },
+      { kind: 'string', key: 'fatherLastName', size: 64, required: false },
+      { kind: 'string', key: 'fatherIdNumber', size: 32, required: false },
+      { kind: 'string', key: 'fatherPhone', size: 32, required: false },
+      // 'mother' | 'father' -- which block the row's `name` and `phone` were
+      // taken from, so the admin panel can label the contact instead of
+      // leaving the reader to work it out.
+      { kind: 'string', key: 'contactParent', size: 16, required: false },
+
+      /*
+       * Superseded by the mother/father columns above. Kept so applications
+       * submitted before the split still read correctly in the admin panel;
+       * nothing writes them any more.
+       */
+      { kind: 'string', key: 'parentFirstName', size: 64, required: false },
+      { kind: 'string', key: 'parentLastName', size: 64, required: false },
+      // The child's photo, kept apart from fileIds so the admin panel can show
+      // it as a portrait rather than as one more anonymous attachment.
+      { kind: 'string', key: 'photoId', size: 64, required: false },
+      // Which form produced the row: 'contact' or 'registration'. Lets the
+      // admin inbox tell a full enrolment application from a general question.
+      { kind: 'string', key: 'source', size: 32, required: false, xdefault: 'contact' },
       // Admin workflow: where this enquiry has got to.
       { kind: 'string', key: 'status', size: 32, required: false, xdefault: 'new' },
       // Private admin notes -- never shown on the public site.
@@ -176,6 +265,7 @@ const SCHEMA = [
       { key: 'idx_email', type: 'key', columns: ['email'] },
       { key: 'idx_status', type: 'key', columns: ['status'] },
       { key: 'idx_archived', type: 'key', columns: ['archived'] },
+      { key: 'idx_source', type: 'key', columns: ['source'] },
     ],
   },
 ];
@@ -223,7 +313,9 @@ for (const table of SCHEMA) {
   }
 
   const { columns } = await tablesDB.listColumns({ databaseId, tableId: table.tableId });
-  const existingColumns = new Set(columns.map((c) => c.key));
+  // A Map, not a Set: `column` needs each live column's `required` flag to see
+  // whether a spec that has since become optional still has to be relaxed.
+  const existingColumns = new Map(columns.map((c) => [c.key, c]));
   for (const spec of table.columns) {
     await column(table.tableId, spec, existingColumns);
   }

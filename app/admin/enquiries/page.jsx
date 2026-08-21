@@ -75,7 +75,7 @@ export default async function EnquiriesPage({ searchParams }) {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>მშობელი</th>
+                  <th>ბავშვი / მშობელი</th>
                   <th>ტელეფონი</th>
                   <th>ასაკი</th>
                   <th>სტატუსი</th>
@@ -84,11 +84,23 @@ export default async function EnquiriesPage({ searchParams }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {rows.map((row) => {
+                  /*
+                   * A registration is about the child, so they lead the row and
+                   * the parent goes underneath. Contact enquiries have no child
+                   * name, so they keep leading with the sender and show their
+                   * email -- which registrations no longer collect.
+                   */
+                  const childName = `${row.childFirstName} ${row.childLastName}`.trim();
+                  const isRegistration = row.source === 'registration';
+                  const primary = (isRegistration && childName) || row.name;
+                  const secondary = isRegistration ? row.name : row.email;
+
+                  return (
                   <tr key={row.$id}>
                     <td>
-                      <Link href={`/admin/enquiries/${row.$id}`}>{row.name}</Link>
-                      <div style={{ color: '#8a93a8', fontSize: 12 }}>{row.email}</div>
+                      <Link href={`/admin/enquiries/${row.$id}`}>{primary}</Link>
+                      <div style={{ color: '#8a93a8', fontSize: 12 }}>{secondary}</div>
                     </td>
                     <td>{row.phone}</td>
                     <td>{row.childAge || '—'}</td>
@@ -102,7 +114,8 @@ export default async function EnquiriesPage({ searchParams }) {
                       {formatDate(row.$createdAt)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -830,6 +830,79 @@
         }
       ]
     },
+    "registration": {
+      "source": "registration.html",
+      "title": "გლდანი იუნაითედ აკადემია",
+      "bodyClass": "header-sticky",
+      "styles": [
+        "/stylesheets/bootstrap.min.css",
+        "/stylesheets/bootstrap.rtl.min.css",
+        "/stylesheets/bootstrap-grid.min.css",
+        "/stylesheets/bootstrap-reboot.min.css",
+        "/stylesheets/bootstrap-utilities.rtl.min.css",
+        "/stylesheets/bootstrap-utilities.min.css",
+        "/stylesheets/bootstrap-reboot.rtl.min.css",
+        "/stylesheets/bootstrap-grid.rtl.min.css",
+        "/stylesheets/style.css",
+        "/stylesheets/responsive.css",
+        "/stylesheets/colors/color1.css",
+        "/stylesheets/owl.carousel.css",
+        "/stylesheets/animate.css",
+        "/stylesheets/animate.min.css",
+        "/stylesheets/swiper-bundle.min.css",
+        "/stylesheets/magnific-popup.min.css"
+      ],
+      "scripts": [
+        {
+          "src": "/javascript/jquery.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/bootstrap.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/bootstrap.bundle.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/jquery.cookie.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/swiper-bundle.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/owl.carousel.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/wow.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/count-down.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/magnific-popup.min.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/jquery-waypoints.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/jquery-countTo.js",
+          "type": "text/javascript"
+        },
+        {
+          "src": "/javascript/main.js",
+          "type": "text/javascript"
+        }
+      ]
+    },
     "shop-detail": {
       "source": "shop-detail.html",
       "title": "გლდანი იუნაითედ აკადემია",

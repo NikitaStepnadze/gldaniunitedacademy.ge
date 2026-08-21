@@ -656,9 +656,39 @@
 .hero-register {
 	background-color: rgba(0, 0, 0, 0.55);
 	backdrop-filter: blur(2px);
+	/* The card sits on the dark hero photo, but its contents inherit the page's
+	   navy body colour and read as black-on-black. Force the card to white and
+	   let the accent rules below opt back out. */
+	color: #fff;
+}
+
+/*
+ * The "რეგისტრაცია" badge above the card title.
+ *
+ * The stock `span.new-event` rule lives in shortcodes.css, which the manifest
+ * never loads, so the badge arrives here completely unstyled -- no fill, no
+ * padding, no radius. It is restated in full rather than inherited.
+ *
+ * The original rounded only the top corners (`6px 6px 0 0`) because in the
+ * theme's markup the badge sat flush on an event photo directly beneath it. In
+ * this card it is a standalone pill with a gap below, so all four corners are
+ * rounded.
+ */
+.hero-register .new-event {
+	display: inline-block;
+	padding: 4px 20px;
+	border-radius: 6px;
+	margin-bottom: 12px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+	letter-spacing: 0.08em;
+	color: var(--navy, #16244f);
+	background-color: var(--primary, #c9a227);
 }
 
 .hero-register .title-event {
+	color: #fff;
 	margin-bottom: 4px;
 }
 
@@ -674,8 +704,22 @@
 	margin: 0 0 10px;
 }
 
-.hero-register-form input {
+/*
+ * The four text fields.
+ *
+ * style.css sets `input[type="text"], input[type="email"], ... { color:
+ * var(--secondary-one) }` -- grey -- at specificity (0,1,1), exactly tying a
+ * plain `.hero-register-form input`. That tie only resolved our way because
+ * custom.css happens to load last, which is too fragile for the thing that
+ * decides whether the form is readable. Naming the type attribute alongside the
+ * form class takes it to (0,2,1) and wins outright.
+ */
+.hero-register-form input,
+.hero-register-form input[type="text"],
+.hero-register-form input[type="tel"],
+.hero-register-form input[type="email"] {
 	width: 100%;
+	height: auto;
 	padding: 12px 16px;
 	border-radius: 8px;
 	border: 1px solid rgba(255, 255, 255, 0.25);
@@ -685,14 +729,55 @@
 	transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
+/*
+ * Placeholder colour.
+ *
+ * style.css styles the *vendor-prefixed* pseudo-elements
+ * (`input::-webkit-input-placeholder`, `::-moz-placeholder`,
+ * `:-ms-input-placeholder`) and sets them to `--secondary-one` (#8a93a8, grey).
+ * A modern `::placeholder` rule does not override those: in each engine the
+ * prefixed and unprefixed names are *different selectors*, and an engine that
+ * recognises its own prefixed form applies it independently. So the grey kept
+ * winning on the empty fields even though `::placeholder` said white.
+ *
+ * Every spelling therefore has to be restated. They must also stay in SEPARATE
+ * rules -- a browser discards an entire selector list containing a pseudo-element
+ * it does not recognise, so grouping them would void the whole block.
+ */
 .hero-register-form input::placeholder {
-	color: rgba(255, 255, 255, 0.6);
+	color: rgba(255, 255, 255, 0.7);
+	opacity: 1;
+}
+
+.hero-register-form input::-webkit-input-placeholder {
+	color: rgba(255, 255, 255, 0.7);
+	opacity: 1;
+}
+
+.hero-register-form input::-moz-placeholder {
+	color: rgba(255, 255, 255, 0.7);
+	opacity: 1;
+}
+
+.hero-register-form input:-ms-input-placeholder {
+	color: rgba(255, 255, 255, 0.7);
 }
 
 .hero-register-form input:focus {
 	outline: none;
 	border-color: var(--gold, #c9a227);
 	background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Chrome paints autofilled fields with its own near-white background and dark
+   text, which breaks the white-on-translucent look. The inset shadow is the
+   only way to override that background. */
+.hero-register-form input:-webkit-autofill,
+.hero-register-form input:-webkit-autofill:hover,
+.hero-register-form input:-webkit-autofill:focus {
+	-webkit-text-fill-color: #fff;
+	caret-color: #fff;
+	-webkit-box-shadow: 0 0 0 1000px rgba(38, 38, 38, 0.92) inset;
 }
 
 /* Marks a field the server or the browser rejected. */
@@ -869,5 +954,739 @@
 @media (prefers-reduced-motion: reduce) {
 	.benefit-stage-video {
 		display: none;
+	}
+}
+
+/*
+ * Isometric pitch render in the About text column, replacing the small
+ * checkerboard graphic that sat above the section heading.
+ *
+ * The image it replaces was a 201x80 decorative block, so the theme rule only
+ * needed margins. This one is an 840x560 illustration with real detail, so it
+ * needs an explicit cap: without a width it would render at intrinsic size and
+ * overflow the column. Capped in `ch`-independent terms against the copy width
+ * below it (p.post is max-width 522px) so the render and the paragraph share an
+ * edge instead of the image out-denting the text block.
+ *
+ * `height: auto` with the width/height attributes on the tag preserves the 3:2
+ * ratio while still giving the browser the aspect box up front, so the heading
+ * below does not shift as the PNG loads.
+ */
+.tf-about-us .about-box > img.about-pitch {
+	display: block;
+	width: 100%;
+	max-width: 420px;
+	height: auto;
+	/* Trims the top margin the theme rule applies: the cutout carries its own
+	   transparent padding, so the theme's 28px read as a much larger gap. */
+	margin-top: -8px;
+	margin-bottom: 12px;
+	margin-left: -14px;
+}
+
+/*
+ * Below the md breakpoint the two columns stack and the copy goes full-bleed,
+ * so the render is centred over it rather than left-hung, and shrunk so it does
+ * not dominate the fold on a phone.
+ */
+@media (max-width: 767px) {
+	.tf-about-us .about-box > img.about-pitch {
+		max-width: 320px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Text colour on the navy sections
+   ---------------------------------------------------------------------------
+   `.background-black` (color1.css) paints these blocks navy but never sets a
+   text colour, so everything inside still inherits `body { color: var(--black) }`
+   -- which is that same navy. The result is navy-on-navy: the benefit cards,
+   testimonial cards and footer copy read as washed-out grey rather than white.
+
+   The theme's own light-text rules for these blocks live in shortcodes.css,
+   which content/manifest.json never loads, so nothing was supplying them.
+
+   Set on the section so every descendant inherits white, then let the existing
+   accent rules (gold eyebrows, gold headings, gold links) override on their own
+   higher specificity -- none of them are weaker than this single-class rule.
+--------------------------------------------------------------------------- */
+.background-black {
+	color: var(--white, #fff);
+}
+
+/*
+ * Headings inside the navy blocks need naming directly: style.css sets
+ * `h1..h6 { color: var(--black) }`, which is a same-specificity rule that would
+ * otherwise win on source order over the inherited white above.
+ */
+.background-black h1,
+.background-black h2,
+.background-black h3,
+.background-black h4,
+.background-black h5,
+.background-black h6 {
+	color: var(--white, #fff);
+}
+
+/*
+ * The benefit and testimonial card copy. These carry no colour of their own, so
+ * inheriting white is enough -- stated explicitly because the paragraph is the
+ * whole point of the card and should not silently depend on an ancestor.
+ */
+.background-black .description-benefit,
+.background-black p.testimonial,
+.background-black .testimonial-box span {
+	color: var(--white, #fff);
+}
+
+/*
+ * About page banner. The shared .page-title image is the theme default used by
+ * every other page, so the pitch photo is scoped to this page only.
+ */
+.page-title.page-title-about {
+	background-image: url(../mini-futbol-sahasi-ozellikleri-ve-olculeri.jpg);
+}
+
+/*
+ * Widget Mission -- image pair alignment.
+ *
+ * The stock template assumes image-v1 is a tall portrait and image-v2 a smaller
+ * portrait sized by its own natural dimensions. Our photos are a landscape
+ * 1280x960 (tab1) and a portrait 612x918 (tab2), so image-v1 rendered short and
+ * wide while the absolutely-positioned image-v2 stood taller than its own
+ * parent -- it spilled past the bottom and broke the overlap.
+ *
+ * Only the sizing is corrected here. The offsets stay in responsive.css, which
+ * already walks image-v2 inward at 1199px and 991px and hides it below 767px;
+ * custom.css loads after it, so re-declaring bottom/right here would override
+ * those and reintroduce the overflow at tablet widths.
+ */
+.image-mission-wrap img.image-v1 {
+	width: 100%;
+	aspect-ratio: 4 / 5;
+	object-fit: cover;
+	object-position: center top;
+	display: block;
+}
+
+.image-mission-wrap .image-v2 {
+	width: 42%;
+	height: auto;
+	aspect-ratio: 3 / 4;
+	object-fit: cover;
+	object-position: center;
+	display: block;
+}
+
+/*
+ * Below 767px image-v2 is hidden and the wrap padding is zeroed, so image-v1 is
+ * alone and full width -- a 4:5 crop is too tall there. Landscape reads better.
+ */
+@media only screen and (max-width: 767px) {
+	.image-mission-wrap img.image-v1 {
+		aspect-ratio: 3 / 2;
+	}
+}
+
+/*
+ * Parallax CTA banner.
+ * The theme leaves this banner's alignment to an inherited text-align, which
+ * centred the headline while the CTA button sat left. Pin the whole block left
+ * so headline, logo lockup and button share one edge.
+ */
+.tf-widget-banner .tf-banne-paralax {
+	text-align: left;
+}
+
+/*
+ * Logo lockup row: crest + the "გლდანი იუნაითედ აკადემია" wordmark. The theme's
+ * `.tf-widget-banner img` sets display:block + 36px/64px margins on every image
+ * in the banner -- the row carries that vertical rhythm now, so the children
+ * reset it and are sized explicitly to keep the lockup's proportions.
+ */
+.tf-widget-banner .banner-wordmark {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 20px;
+	margin: 36px 0 64px 0;
+	flex-wrap: nowrap;
+}
+
+.tf-widget-banner .banner-wordmark img {
+	margin: 0;
+}
+
+.tf-widget-banner .banner-wordmark .banner-crest {
+	width: auto;
+	height: 132px;
+	flex: 0 0 auto;
+	object-fit: contain;
+}
+
+/* The wordmark is live text rather than a bitmap, so it scales cleanly and
+   stays selectable. Uses the display face (`--font-display`) that colors/color1.css
+   already applies to `.title-banner` directly above, so the lockup matches the
+   headline -- note Oswald is NOT available here, the theme's Google Fonts import
+   was removed. `--font-display` has no Latin-specific fallback issue: Dachi The
+   Lynx covers Latin as well as Georgian. */
+.tf-widget-banner .banner-wordmark .banner-text {
+	font-family: var(--font-display);
+	font-size: 54px;
+	line-height: 1.1;
+	font-weight: 400;
+	font-synthesis: none;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--white);
+	white-space: nowrap;
+}
+
+@media only screen and (max-width: 991px) {
+	.tf-widget-banner .banner-wordmark .banner-crest {
+		height: 104px;
+	}
+
+	.tf-widget-banner .banner-wordmark .banner-text {
+		font-size: 42px;
+	}
+}
+
+@media only screen and (max-width: 767px) {
+	.tf-widget-banner .banner-wordmark {
+		gap: 14px;
+		margin: 28px 0 44px 0;
+	}
+
+	.tf-widget-banner .banner-wordmark .banner-crest {
+		height: 76px;
+	}
+
+	.tf-widget-banner .banner-wordmark .banner-text {
+		font-size: 28px;
+		white-space: normal;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Registration page  (/registration)
+   ---------------------------------------------------------------------------
+   The enrolment application: child details, parent details, photo, documents.
+
+   Styled from scratch rather than reusing the theme form classes, because the
+   theme component styles live in shortcodes.css, which content/manifest.json
+   never loads. Anything here that looked "inherited from the theme" would in
+   fact be unstyled, so every rule this page needs is stated outright.
+
+   Light surface, navy text -- the opposite of the hero card, which is why the
+   colours are written out here instead of shared with it.
+--------------------------------------------------------------------------- */
+.tf-registration-page {
+	padding: 80px 0 100px;
+	background-color: var(--white, #fff);
+}
+
+.registration-layout {
+	/* The aside is reference material, the form is the task. Side by side the
+	   form leads; the row gap only matters once they stack. */
+	row-gap: 48px;
+}
+
+/* --- left column: guidance ----------------------------------------------- */
+
+.registration-aside {
+	padding-right: 24px;
+}
+
+.registration-aside .content-page-title span {
+	display: block;
+	margin-bottom: 8px;
+	font-family: "Oswald", sans-serif;
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	color: var(--gold-dark, #a5821c);
+}
+
+.registration-aside .content-page-title h2 {
+	font-size: 34px;
+	line-height: 44px;
+	margin-bottom: 16px;
+}
+
+.registration-aside .content-page-title p.post {
+	color: var(--secondary, #4a5570);
+	margin-bottom: 0;
+}
+
+.registration-aside-title {
+	font-family: "Oswald", sans-serif;
+	font-size: 18px;
+	font-weight: 500;
+	margin-bottom: 16px;
+	color: var(--navy, #16244f);
+}
+
+.registration-steps,
+.registration-docs,
+.registration-help {
+	margin-top: 36px;
+}
+
+/*
+ * The four enrolment steps. A real <ol> so the order survives without CSS and
+ * reads correctly to a screen reader; the visible numerals are spans because
+ * the counter needs the gold disc treatment.
+ */
+.registration-step-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.registration-step-list li {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.registration-step-num {
+	flex: 0 0 auto;
+	width: 26px;
+	height: 26px;
+	border-radius: 100%;
+	background-color: var(--gold, #c9a227);
+	color: var(--navy, #16244f);
+	font-family: "Oswald", sans-serif;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 26px;
+	text-align: center;
+}
+
+.registration-step-text {
+	color: var(--secondary, #4a5570);
+	line-height: 26px;
+}
+
+.registration-doc-list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+}
+
+.registration-doc-list li {
+	position: relative;
+	padding-left: 20px;
+	margin-bottom: 10px;
+	color: var(--secondary, #4a5570);
+}
+
+/* A gold tick drawn in CSS, so the list needs no icon font or image. */
+.registration-doc-list li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 9px;
+	width: 6px;
+	height: 10px;
+	border-right: 2px solid var(--gold, #c9a227);
+	border-bottom: 2px solid var(--gold, #c9a227);
+	transform: rotate(45deg);
+}
+
+.registration-docs-note,
+.registration-help p {
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--secondary-one, #8a93a8);
+}
+
+.registration-help {
+	padding: 24px;
+	border-radius: 12px;
+	background-color: var(--surface, #f5f7fb);
+	border: 1px solid var(--line, #dde3ef);
+}
+
+.registration-help-phone,
+.registration-help-mail {
+	display: block;
+	font-family: "Oswald", sans-serif;
+	font-weight: 500;
+	color: var(--navy, #16244f);
+}
+
+.registration-help-phone {
+	font-size: 20px;
+	margin-bottom: 4px;
+}
+
+.registration-help-mail {
+	font-size: 15px;
+	word-break: break-all;
+}
+
+.registration-help-phone:hover,
+.registration-help-mail:hover {
+	color: var(--gold-dark, #a5821c);
+}
+
+/* --- right column: the form ---------------------------------------------- */
+
+.registration-form-wrap {
+	padding: 40px;
+	border-radius: 16px;
+	background-color: var(--white, #fff);
+	border: 1px solid var(--line, #dde3ef);
+	box-shadow: 0 18px 50px rgba(22, 36, 79, 0.07);
+}
+
+/*
+ * Each <fieldset> is one titled section. The theme ships no fieldset styling
+ * and browsers apply a default border and padding, so both are reset.
+ */
+.registration-group {
+	border: 0;
+	padding: 0;
+	margin: 0 0 32px;
+}
+
+.registration-group:last-of-type {
+	margin-bottom: 24px;
+}
+
+.registration-legend {
+	/* A legend is not an ordinary flow box: display:block plus the float reset
+	   is what makes the border-bottom span the fieldset in every engine. */
+	display: block;
+	width: 100%;
+	float: none;
+	padding: 0 0 10px;
+	margin-bottom: 20px;
+	border-bottom: 1px solid var(--line, #dde3ef);
+	font-family: "Oswald", sans-serif;
+	font-size: 18px;
+	font-weight: 500;
+	color: var(--navy, #16244f);
+}
+
+/*
+ * Two columns on desktop. The grid lives on a wrapper rather than the fieldset
+ * because a fieldset as grid container has historically been unreliable, and
+ * the legend would otherwise become a grid item.
+ */
+.registration-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18px 20px;
+}
+
+.registration-field-wide {
+	grid-column: 1 / -1;
+}
+
+.registration-field {
+	display: flex;
+	flex-direction: column;
+}
+
+.registration-field label {
+	margin-bottom: 7px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--navy, #16244f);
+}
+
+.req {
+	color: #c62828;
+}
+
+/*
+ * Inputs.
+ *
+ * style.css sets `input[type="text"], input[type="email"], ... { color:
+ * var(--secondary-one); border-color: var(--secondary-one); height: 56px }` at
+ * specificity (0,1,1). A plain `.registration-form input` only ties that and
+ * would depend on load order, so the type attributes are named alongside the
+ * class to win outright -- the same fix the hero form needed.
+ */
+.registration-form input[type="text"],
+.registration-form input[type="tel"],
+.registration-form input[type="email"],
+.registration-form input[type="date"],
+.registration-form input[type="time"],
+.registration-form textarea {
+	width: 100%;
+	height: auto;
+	padding: 12px 14px;
+	border: 1px solid var(--line, #dde3ef);
+	border-radius: 8px;
+	background-color: var(--white, #fff);
+	color: var(--navy, #16244f);
+	font-family: "Jost", sans-serif;
+	font-size: 15px;
+	line-height: 24px;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.registration-form textarea {
+	resize: vertical;
+	min-height: 110px;
+}
+
+.registration-form input[type="text"]:focus,
+.registration-form input[type="tel"]:focus,
+.registration-form input[type="email"]:focus,
+.registration-form input[type="date"],
+.registration-form input[type="time"]:focus,
+.registration-form textarea:focus {
+	outline: none;
+	border-color: var(--gold, #c9a227);
+	box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.16);
+}
+
+/* Placeholders: every spelling restated, for the reason documented on the hero
+   form -- style.css styles the vendor-prefixed pseudo-elements, and those are
+   separate selectors that an unprefixed rule does not override. Separate blocks
+   because a browser discards a whole selector list containing one it rejects. */
+.registration-form ::placeholder {
+	color: var(--secondary-one, #8a93a8);
+	opacity: 1;
+}
+
+.registration-form ::-webkit-input-placeholder {
+	color: var(--secondary-one, #8a93a8);
+	opacity: 1;
+}
+
+.registration-form ::-moz-placeholder {
+	color: var(--secondary-one, #8a93a8);
+	opacity: 1;
+}
+
+/* A rejected field, marked by the form handler. */
+.registration-form [aria-invalid="true"] {
+	border-color: #c62828;
+	background-color: #fff8f8;
+}
+
+.registration-form [aria-invalid="true"]:focus {
+	box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.14);
+}
+
+.registration-hint {
+	margin-top: 6px;
+	font-size: 13px;
+	line-height: 18px;
+	color: var(--secondary-one, #8a93a8);
+}
+
+/*
+ * Sits under the father's block and explains the one rule the field labels
+ * cannot: both parent sections are optional individually, but at least one has
+ * to be completed. Spaced away from the grid above so it reads as a note about
+ * the section rather than as a hint on the last field.
+ */
+.registration-parent-note {
+	margin-top: 14px;
+	margin-bottom: 0;
+}
+
+.registration-error {
+	margin-top: 6px;
+	font-size: 13px;
+	line-height: 18px;
+	font-weight: 600;
+	color: #c62828;
+}
+
+/* --- file inputs ---------------------------------------------------------- */
+
+/*
+ * The native control is kept rather than swapped for a styled label: it is
+ * keyboard-accessible, announces the chosen file, and on a phone it opens the
+ * camera/gallery picker parents expect. Only its frame is themed.
+ */
+.registration-form input[type="file"] {
+	display: block;
+	width: 100%;
+	padding: 12px;
+	border: 1px dashed var(--line, #dde3ef);
+	border-radius: 8px;
+	background-color: var(--surface, #f5f7fb);
+	color: var(--navy, #16244f);
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.registration-form input[type="file"]:focus-visible {
+	outline: 2px solid var(--gold, #c9a227);
+	outline-offset: 2px;
+}
+
+.registration-form input[type="file"]::file-selector-button {
+	margin-right: 12px;
+	padding: 8px 16px;
+	border: 0;
+	border-radius: 6px;
+	background-color: var(--navy, #16244f);
+	color: var(--white, #fff);
+	font-family: "Oswald", sans-serif;
+	font-size: 13px;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+}
+
+.registration-form input[type="file"]::file-selector-button:hover {
+	background-color: var(--gold-dark, #a5821c);
+}
+
+/* What is actually attached, listed by the form handler with sizes -- a file
+   input on its own shows only the first name, or an unhelpful "n files". */
+.registration-file-list {
+	margin-top: 8px;
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--navy, #16244f);
+	word-break: break-word;
+}
+
+/* --- consent, submit, status --------------------------------------------- */
+
+.registration-consent {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 4px 10px;
+	align-items: start;
+	padding: 18px;
+	margin-bottom: 24px;
+	border-radius: 10px;
+	background-color: var(--surface, #f5f7fb);
+}
+
+.registration-consent input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	margin: 3px 0 0;
+	accent-color: var(--gold-dark, #a5821c);
+	cursor: pointer;
+}
+
+.registration-consent label {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--secondary, #4a5570);
+	cursor: pointer;
+}
+
+/* The error belongs under both columns, not beside the checkbox. */
+.registration-consent .registration-error {
+	grid-column: 1 / -1;
+}
+
+/*
+ * The submit button.
+ *
+ * `.flat-button` lives in shortcodes.css and so never loads; the gold fill and
+ * navy label are set here rather than inherited.
+ */
+.registration-submit {
+	display: inline-block;
+	width: 100%;
+	padding: 16px 40px;
+	border: 0;
+	border-radius: 8px;
+	background-color: var(--gold, #c9a227);
+	color: var(--navy, #16244f);
+	font-family: "Oswald", sans-serif;
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-align: center;
+	cursor: pointer;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.registration-submit:hover {
+	background-color: var(--navy, #16244f);
+	color: var(--gold, #c9a227);
+}
+
+.registration-submit[disabled] {
+	opacity: 0.65;
+	cursor: default;
+}
+
+.registration-required-note {
+	margin: 14px 0 0;
+	font-size: 13px;
+	color: var(--secondary-one, #8a93a8);
+}
+
+/* Result of a submit, injected by the form handler. */
+.registration-status {
+	margin: 18px 0 0;
+	padding: 14px 16px;
+	border-radius: 8px;
+	font-size: 15px;
+	line-height: 24px;
+}
+
+.registration-status[data-state="ok"] {
+	background-color: #e8f5e9;
+	border: 1px solid #a5d6a7;
+	color: #1b5e20;
+}
+
+.registration-status[data-state="error"] {
+	background-color: #fdecea;
+	border: 1px solid #ef9a9a;
+	color: #b71c1c;
+}
+
+/* --- responsive ----------------------------------------------------------- */
+
+@media only screen and (max-width: 991px) {
+	.registration-aside {
+		padding-right: 0;
+	}
+}
+
+@media only screen and (max-width: 767px) {
+	.tf-registration-page {
+		padding: 56px 0 72px;
+	}
+
+	/* One column: two 50% fields leave neither enough room for a Georgian
+	   label, which then wraps and misaligns the rows. */
+	.registration-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.registration-form-wrap {
+		padding: 24px 20px;
+		border-radius: 12px;
+	}
+
+	.registration-aside .content-page-title h2 {
+		font-size: 28px;
+		line-height: 38px;
+	}
+
+	/* iOS zooms the page in on focus for any font-size below 16px. */
+	.registration-form input[type="text"],
+	.registration-form input[type="tel"],
+	.registration-form input[type="email"],
+	.registration-form input[type="date"],
+	.registration-form input[type="time"],
+	.registration-form textarea {
+		font-size: 16px;
 	}
 }
