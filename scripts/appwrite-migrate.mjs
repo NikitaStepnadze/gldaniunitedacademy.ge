@@ -110,6 +110,13 @@ function column(tableId, spec, existingColumns) {
      * changing its size can fail against existing rows, so those stay manual.
      */
     if (existing.required && rest.required === false) {
+      /*
+       * `xdefault` is not optional in the update calls, even though it is in
+       * the create ones: the SDK rejects the request before it is sent if the
+       * key is absent. It becomes the column's default, and a column being
+       * made optional precisely because nothing fills it wants no default, so
+       * it is passed explicitly as null.
+       */
       const relax = {
         string: () =>
           tablesDB.updateStringColumn({
@@ -118,9 +125,16 @@ function column(tableId, spec, existingColumns) {
             key,
             required: false,
             size: rest.size,
+            xdefault: null,
           }),
         email: () =>
-          tablesDB.updateEmailColumn({ databaseId, tableId, key, required: false }),
+          tablesDB.updateEmailColumn({
+            databaseId,
+            tableId,
+            key,
+            required: false,
+            xdefault: null,
+          }),
       }[kind];
 
       if (relax) return step(`${key} (${kind}) -> optional`, relax);
@@ -253,8 +267,11 @@ const SCHEMA = [
       // Which form produced the row: 'contact' or 'registration'. Lets the
       // admin inbox tell a full enrolment application from a general question.
       { kind: 'string', key: 'source', size: 32, required: false, xdefault: 'contact' },
-      // Admin workflow: where this enquiry has got to.
-      { kind: 'string', key: 'status', size: 32, required: false, xdefault: 'new' },
+      // Admin workflow: 'review', 'active' or 'declined'. Left as a plain string
+      // rather than an enum so the set can change without a column migration;
+      // lib/appwrite/enquiries.js is what constrains it, and maps the values
+      // used before this set onto it.
+      { kind: 'string', key: 'status', size: 32, required: false, xdefault: 'review' },
       // Private admin notes -- never shown on the public site.
       { kind: 'string', key: 'notes', size: 8000, required: false },
       // Ids of files in the enquiry-files bucket, attached by the parent.

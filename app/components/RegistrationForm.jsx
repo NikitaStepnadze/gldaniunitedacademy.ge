@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react';
 
+import { enhanceDateInput, enhanceTimeInput } from './datePickers';
+import { showSuccessModal } from './successModal';
+
 /**
  * Wires the registration page's static form up to /api/registration.
  *
@@ -212,6 +215,10 @@ export default function RegistrationForm() {
     status.hidden = true;
     form.appendChild(status);
 
+    /* Closes an open confirmation card on unmount, so a route change cannot
+       leave the overlay -- and the scroll lock it sets -- behind. */
+    let closeSuccessModal = null;
+
     function showStatus(text, ok) {
       status.textContent = text;
       status.dataset.state = ok ? 'ok' : 'error';
@@ -280,13 +287,18 @@ export default function RegistrationForm() {
 
     /* --- validation ------------------------------------------------------ */
 
-    /** Validates one mandatory single-file input, pushing any failure onto `bad`. */
+    /**
+     * Checks one single-file input, pushing any failure onto `bad`.
+     *
+     * Both documents are optional: a parent who cannot scan form 100 at the
+     * point of applying should not be blocked, and the academy collects it
+     * afterwards. A file that is chosen still has to be a valid one.
+     */
     function validateFile(name, allowed, bad) {
       const file = [...(field(name)?.files ?? [])][0];
-      if (!file) {
-        setError(name, 'required');
-        bad.push(name);
-      } else if (!looksAllowed(file, allowed)) {
+      if (!file) return;
+
+      if (!looksAllowed(file, allowed)) {
         setError(name, 'type');
         bad.push(name);
       } else if (file.size > MAX_BYTES) {
@@ -444,8 +456,13 @@ export default function RegistrationForm() {
         body.set(name, field(name)?.value ?? '');
       }
       body.set('website', honeypot.value);
-      body.set('photo', [...field('photo').files][0]);
-      body.set('form100', [...field('form100').files][0]);
+      // Appended only when chosen: setting an absent file would post the string
+      // "undefined" as the field's value, which the route would read as a file
+      // that is present but unusable.
+      const photoFile = [...(field('photo')?.files ?? [])][0];
+      const form100File = [...(field('form100')?.files ?? [])][0];
+      if (photoFile) body.set('photo', photoFile);
+      if (form100File) body.set('form100', form100File);
 
       setBusy(true);
       try {
@@ -458,8 +475,10 @@ export default function RegistrationForm() {
           clearErrors();
           renderFileList('photo');
           renderFileList('form100');
-          showStatus(MESSAGES.success, true);
-          status.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // The confirmation is the modal now; an inline line under the form
+          // would only repeat it behind the card.
+          status.hidden = true;
+          closeSuccessModal = showSuccessModal({ returnFocusTo: button });
           return;
         }
 
@@ -518,20 +537,23 @@ export default function RegistrationForm() {
     textInputs.forEach((input) => input.addEventListener('input', onInput));
 
     /*
-     * The date input needs a ceiling: a birth date cannot be in the future, and
-     * the native picker should not offer one. Set here rather than in the HTML
-     * because the markup is a static file and would go stale.
+     * Swap the two native controls for select-based pickers: day/month/year in
+     * the order the date is spoken, and 24-hour hour/minute lists instead of a
+     * masked AM/PM field. Done here rather than in the HTML because the year
+     * range is relative to today and the markup is a static file.
+     *
+     * Each picker keeps its field's `name` on a hidden input holding the same
+     * YYYY-MM-DD / HH:MM string, so validation and submit above are unchanged.
      */
-    const dobInput = field('childDob');
-    if (dobInput) {
-      const today = new Date();
-      const iso = (d) => d.toISOString().slice(0, 10);
-      dobInput.max = iso(today);
-      // Oldest plausible applicant, so the picker opens somewhere useful.
-      const earliest = new Date(today);
-      earliest.setFullYear(earliest.getFullYear() - MAX_AGE - 1);
-      dobInput.min = iso(earliest);
-    }
+    const thisYear = new Date().getFullYear();
+    const teardowns = [
+      enhanceDateInput(field('childDob'), {
+        minYear: thisYear - MAX_AGE - 1,
+        maxYear: thisYear - MIN_AGE,
+      }),
+      enhanceTimeInput(field('schoolFrom')),
+      enhanceTimeInput(field('schoolTo')),
+    ];
 
     return () => {
       form.removeEventListener('submit', handleSubmit);
@@ -539,6 +561,8 @@ export default function RegistrationForm() {
         input?.removeEventListener('change', handler)
       );
       textInputs.forEach((input) => input.removeEventListener('input', onInput));
+      teardowns.forEach((restore) => restore());
+      closeSuccessModal?.();
       honeypot.remove();
       status.remove();
     };

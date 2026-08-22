@@ -146,22 +146,28 @@ ordinary JSX — pages can be converted one at a time, since each is independent
 
 ### Placeholders to replace
 
-Real details were not available, so these are marked in the markup and should
-be searched for and replaced:
+Contact details are now real. Phone, email and address appear in the header,
+footer and contact page, and are marked up as `tel:` / `mailto:` / map links:
+
+| Detail | Value |
+| --- | --- |
+| Phone | `557 007 887` (`tel:+995557007887`) |
+| Email | `gldani.united@gmail.com` |
+| Address | `გლდანი 1 მიკრორაიონი, 39 საჯარო სკოლის ტერიტორია` |
+| Map pin | https://maps.app.goo.gl/ZpRe6mFbU4BrJxFe8 |
+
+The map on `/contact` and `/about` is a keyless Google embed pinned to the
+coordinates behind that link (`41.7931358,44.8267380`).
+
+These placeholders are still outstanding:
 
 | Placeholder | Where |
 | --- | --- |
-| `+995 5XX XX XX XX` | header, footer, contact page, CTA form |
-| `თბილისი, გლდანი, [მისამართი]` | header, footer, contact page |
 | `[მწვრთნელის სახელი]` | coach cards on `/` and `/about` |
 | `[მშობლის სახელი]` | testimonial carousel on `/` |
-| `info@gldaniunitedacademy.ge` | header, footer, contact page |
 
 Social links in the header and footer still point at bare `facebook.com` /
 `instagram.com` etc. and need real profile URLs.
-
-The map on `/contact` and `/about` is a keyless Google embed pointing at
-Gldani; narrow the `q=` parameter once the exact address is known.
 
 ### The about-us collage
 

@@ -136,6 +136,8 @@
 .admin input[type='email'],
 .admin input[type='password'],
 .admin input[type='tel'],
+.admin input[type='date'],
+.admin input[type='time'],
 .admin textarea,
 .admin select {
   width: 100%;
@@ -277,29 +279,19 @@
   white-space: nowrap;
 }
 
-.pill.new {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.pill.contacted {
-  background: #fff8e1;
-  color: #a5821c;
-}
-
-.pill.trial {
-  background: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.pill.enrolled {
+.pill.active {
   background: #e8f5e9;
   color: var(--ok);
 }
 
+.pill.review {
+  background: #fff8e1;
+  color: #a5821c;
+}
+
 .pill.declined {
-  background: #fafafa;
-  color: #757575;
+  background: #fdecea;
+  color: #c62828;
 }
 
 /* ---- Filters ---- */
@@ -492,8 +484,190 @@
   color: var(--ink-faint);
 }
 
+/* ---------------------------------------------------------------------------
+   Enquiry editor
+   The detail page can edit the details a parent submitted, so staff can fix a
+   typo or fill in what was taken down over the phone. Read-only until the
+   "edit" toggle is opened, so the normal case stays a record to read rather
+   than a form to accidentally change.
+--------------------------------------------------------------------------- */
+
+/* Two fields per row: first/last name, id/phone, school from/to all pair up
+   naturally, and a single column would make the form twice as long to scan. */
+.admin-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+
+/* A field group heading inside the editor -- "ბავშვი", "დედა", "მამა". */
+.admin-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 6px;
+}
+
+.admin-fieldset legend {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 0;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Separates the child / mother / father blocks without boxing each one. */
+.admin-fieldset + .admin-fieldset {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+/* Per-field validation message, rendered under the input it belongs to. */
+.admin-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--danger);
+}
+
+.admin input[aria-invalid='true'],
+.admin textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/*
+ * The contact-parent radio pair. Which parent `name` and `phone` are copied
+ * from is a choice, not a derived value, once both blocks are filled in.
+ */
+.admin-radio-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.admin-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.admin-radio input[type='radio'] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+/* --- document rows ----------------------------------------------------- */
+/*
+ * The photo and form 100 each get a row that states what is attached and
+ * offers the two actions that apply: replace it, or remove it. Both documents
+ * are optional, so "not attached" is a normal state and is styled as
+ * information rather than as an error.
+ */
+.admin-doc {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-doc:last-of-type {
+  border-bottom: 0;
+}
+
+.admin-doc-info {
+  min-width: 0;
+}
+
+.admin-doc-name {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.admin-doc-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* Says a required-in-practice document has not arrived. Not an error state --
+   the form no longer demands it -- but worth the reader's eye. */
+.admin-doc-missing {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.admin-doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/*
+ * `<input type="file">` cannot be restyled beyond its button, so the row uses
+ * the native control and only the button is themed.
+ */
+.admin input[type='file'] {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.admin input[type='file']::file-selector-button {
+  margin-right: 10px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.admin input[type='file']::-webkit-file-upload-button {
+  margin-right: 10px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* A smaller button for the actions sitting inside a document row. */
+.admin-btn.small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Keeps the panel's action buttons on one line with a gap. */
+.admin-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
 @media (max-width: 820px) {
-  .admin-grid {
+  .admin-grid,
+  .admin-field-row {
     grid-template-columns: 1fr;
   }
 

@@ -1,4 +1,4 @@
-import EnquiryForms from '../components/EnquiryForms';
+import HeroRegisterWizard from '../components/HeroRegisterWizard';
 import ThemePage from './ThemePage';
 
 /**
@@ -11,7 +11,7 @@ export default function Page() {
   return (
     <>
       <ThemePage route="index" />
-      <EnquiryForms />
+      <HeroRegisterWizard />
     </>
   );
 }

@@ -16,8 +16,8 @@
         <div class="themeflat-container">
             <div class="header-top-inner">
                 <div class="address">
-                    <a href="mailto:info@gldaniunitedacademy.ge"><i class="icon-Vector"></i>info@gldaniunitedacademy.ge</a>
-                    <address><i class="icon-Vector-22"></i>თბილისი, გლდანი, [მისამართი]</address>
+                    <a href="mailto:gldani.united@gmail.com"><i class="icon-Vector"></i>gldani.united@gmail.com</a>
+                    <address><i class="icon-Vector-22"></i><a href="https://maps.app.goo.gl/ZpRe6mFbU4BrJxFe8" target="_blank" rel="noopener">გლდანი 1 მიკრორაიონი, 39 საჯარო სკოლის ტერიტორია</a></address>
                 </div>
                 <div class="social-icon">
                     <a href="facebook.com"><i class="icon-facebook"></i></a>
@@ -119,31 +119,196 @@
                                 <a href="/registration" class="flat-button">ჩარიცხვა</a>
                             </div>
                         </div>
-                        <div class="box-events-slide hero-register">
+                        <div class="box-events-slide hero-register hero-register-wizard">
                             <span class="new-event">რეგისტრაცია</span>
                             <div class="content-event">
-                                <h2 class="title-event" data-cms="home.register.title">ჩარიცხე შენი შვილი</h2>
-                                <p class="hero-register-note" data-cms="home.register.note">შეავსე ფორმა და დაგიკავშირდებით</p>
-                                <form id="hero-register-form" class="hero-register-form" method="post" action="/" novalidate>
-                                    <fieldset>
-                                        <input type="text" name="name" required aria-required="true"
-                                            placeholder="მშობლის სახელი და გვარი" autocomplete="name">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="tel" name="phone" required aria-required="true"
-                                            placeholder="ტელეფონი" autocomplete="tel">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="email" name="email" required aria-required="true"
-                                            placeholder="ელფოსტა" autocomplete="email">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="text" name="childAge" placeholder="ბავშვის ასაკი"
-                                            inputmode="numeric">
-                                    </fieldset>
-                                    <button type="submit" class="flat-button hero-register-submit">
-                                        <span>რეგისტრაცია</span>
-                                    </button>
+                                <h2 class="title-event" data-cms="home.register.title">აკადემიაში რეგისტრაციის ფორმა</h2>
+
+                                <!--
+                                  The full /api/registration field set, split
+                                  across four steps so the card keeps the height
+                                  of the old four-field form. Only this slide
+                                  carries a live form; slides 2 and 3 link here.
+
+                                  novalidate: HeroRegisterWizard.jsx validates
+                                  each step itself so it can mark every bad field
+                                  at once and keep the parent on the step.
+                                -->
+                                <form id="hero-register-form" class="hero-register-form"
+                                    method="post" action="/api/registration"
+                                    enctype="multipart/form-data" novalidate>
+
+                                    <div class="hero-wizard-progress">
+                                        <ol class="hero-wizard-dots" role="list">
+                                            <li class="hero-wizard-dot" data-step-dot="1"></li>
+                                            <li class="hero-wizard-dot" data-step-dot="2"></li>
+                                            <li class="hero-wizard-dot" data-step-dot="3"></li>
+                                            <li class="hero-wizard-dot" data-step-dot="4"></li>
+                                        </ol>
+                                        <p class="hero-wizard-count">
+                                            <span data-step-current>1</span>/<span data-step-total>4</span>
+                                        </p>
+                                    </div>
+
+                                    <!-- Step 1 — the child -->
+                                    <div class="hero-wizard-step" data-step="1">
+                                        <p class="hero-wizard-legend">ბავშვის მონაცემები</p>
+                                        <fieldset>
+                                            <input type="text" name="childFirstName"
+                                                placeholder="ბავშვის სახელი *" autocomplete="off">
+                                            <span class="hero-wizard-error" data-error-for="childFirstName" hidden></span>
+                                        </fieldset>
+                                        <fieldset>
+                                            <input type="text" name="childLastName"
+                                                placeholder="ბავშვის გვარი *" autocomplete="off">
+                                            <span class="hero-wizard-error" data-error-for="childLastName" hidden></span>
+                                        </fieldset>
+                                        <fieldset>
+                                            <input type="text" name="childIdNumber" inputmode="numeric"
+                                                maxlength="16" placeholder="პირადი ნომერი * (11 ციფრი)"
+                                                autocomplete="off">
+                                            <span class="hero-wizard-error" data-error-for="childIdNumber" hidden></span>
+                                        </fieldset>
+                                        <fieldset>
+                                            <label class="hero-wizard-label" for="hero-child-dob">დაბადების თარიღი *</label>
+                                            <input type="date" id="hero-child-dob" name="childDob">
+                                            <span class="hero-wizard-error" data-error-for="childDob" hidden></span>
+                                        </fieldset>
+                                    </div>
+
+                                    <!-- Step 2 — where the child lives and studies -->
+                                    <div class="hero-wizard-step" data-step="2" hidden>
+                                        <p class="hero-wizard-legend">მისამართი და სკოლა</p>
+                                        <fieldset>
+                                            <input type="text" name="address" placeholder="მისამართი *"
+                                                autocomplete="street-address">
+                                            <span class="hero-wizard-error" data-error-for="address" hidden></span>
+                                        </fieldset>
+                                        <fieldset class="hero-wizard-pair">
+                                            <span class="hero-wizard-field">
+                                                <label class="hero-wizard-label" for="hero-school-from">სკოლა — დან *</label>
+                                                <input type="time" id="hero-school-from" name="schoolFrom">
+                                                <span class="hero-wizard-error" data-error-for="schoolFrom" hidden></span>
+                                            </span>
+                                            <span class="hero-wizard-field">
+                                                <label class="hero-wizard-label" for="hero-school-to">სკოლა — მდე *</label>
+                                                <input type="time" id="hero-school-to" name="schoolTo">
+                                                <span class="hero-wizard-error" data-error-for="schoolTo" hidden></span>
+                                            </span>
+                                        </fieldset>
+                                        <p class="hero-wizard-hint">ვარჯიშის ჯგუფს სკოლის განრიგზე მოვარგებთ.</p>
+                                    </div>
+
+                                    <!--
+                                      Step 3 — one parent, chosen by the tabs.
+                                      The API accepts either mother or father as
+                                      long as one block is complete, so the card
+                                      asks for one instead of showing eight
+                                      inputs the parent must scroll through.
+                                    -->
+                                    <div class="hero-wizard-step" data-step="3" hidden>
+                                        <p class="hero-wizard-legend">მშობლის მონაცემები</p>
+                                        <div class="hero-wizard-tabs" role="tablist">
+                                            <button type="button" class="hero-wizard-tab" data-parent-tab="mother"
+                                                role="tab" aria-selected="true">დედა</button>
+                                            <button type="button" class="hero-wizard-tab" data-parent-tab="father"
+                                                role="tab" aria-selected="false">მამა</button>
+                                        </div>
+
+                                        <div class="hero-wizard-parent" data-parent="mother">
+                                            <fieldset>
+                                                <input type="text" name="motherFirstName"
+                                                    placeholder="დედის სახელი *" autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="motherFirstName" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="text" name="motherLastName"
+                                                    placeholder="დედის გვარი *" autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="motherLastName" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="text" name="motherIdNumber" inputmode="numeric"
+                                                    maxlength="16" placeholder="პირადი ნომერი * (11 ციფრი)"
+                                                    autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="motherIdNumber" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="tel" name="motherPhone" inputmode="tel"
+                                                    placeholder="ტელეფონი *" autocomplete="tel">
+                                                <span class="hero-wizard-error" data-error-for="motherPhone" hidden></span>
+                                            </fieldset>
+                                        </div>
+
+                                        <div class="hero-wizard-parent" data-parent="father" hidden>
+                                            <fieldset>
+                                                <input type="text" name="fatherFirstName"
+                                                    placeholder="მამის სახელი *" autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="fatherFirstName" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="text" name="fatherLastName"
+                                                    placeholder="მამის გვარი *" autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="fatherLastName" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="text" name="fatherIdNumber" inputmode="numeric"
+                                                    maxlength="16" placeholder="პირადი ნომერი * (11 ციფრი)"
+                                                    autocomplete="off">
+                                                <span class="hero-wizard-error" data-error-for="fatherIdNumber" hidden></span>
+                                            </fieldset>
+                                            <fieldset>
+                                                <input type="tel" name="fatherPhone" inputmode="tel"
+                                                    placeholder="ტელეფონი *" autocomplete="tel">
+                                                <span class="hero-wizard-error" data-error-for="fatherPhone" hidden></span>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+
+                                    <!--
+                                      Step 4 — the documents, both optional. A
+                                      parent without a scan to hand can still
+                                      apply; the academy collects them later and
+                                      the admin panel can upload them.
+                                    -->
+                                    <div class="hero-wizard-step" data-step="4" hidden>
+                                        <p class="hero-wizard-legend">ფოტო და საბუთები</p>
+                                        <p class="hero-wizard-hint">არასავალდებულოა — შეგიძლიათ მოგვიანებით მოგვაწოდოთ.</p>
+                                        <fieldset class="hero-wizard-file">
+                                            <label class="hero-wizard-label" for="hero-photo">ბავშვის ფოტო</label>
+                                            <input type="file" id="hero-photo" name="photo"
+                                                accept="image/jpeg,image/png,image/webp,image/heic">
+                                            <span class="hero-wizard-files" data-files-for="photo" hidden></span>
+                                            <span class="hero-wizard-error" data-error-for="photo" hidden></span>
+                                        </fieldset>
+                                        <fieldset class="hero-wizard-file">
+                                            <label class="hero-wizard-label" for="hero-form100">ფორმა 100</label>
+                                            <input type="file" id="hero-form100" name="form100"
+                                                accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
+                                            <span class="hero-wizard-files" data-files-for="form100" hidden></span>
+                                            <span class="hero-wizard-error" data-error-for="form100" hidden></span>
+                                        </fieldset>
+                                        <div class="hero-wizard-consent">
+                                            <input type="checkbox" id="hero-consent" name="consent">
+                                            <label for="hero-consent">ვეთანხმები მონაცემთა დამუშავებას ჩარიცხვის მიზნით. *</label>
+                                            <span class="hero-wizard-error" data-error-for="consent" hidden></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="hero-wizard-nav">
+                                        <button type="button" class="hero-wizard-back" data-step-back hidden>
+                                            <span>უკან</span>
+                                        </button>
+                                        <button type="button" class="flat-button hero-register-submit" data-step-next>
+                                            <span>გაგრძელება</span>
+                                        </button>
+                                        <button type="submit" class="flat-button hero-register-submit" data-step-submit hidden>
+                                            <span>განაცხადის გაგზავნა</span>
+                                        </button>
+                                    </div>
+
+                                    <p class="hero-wizard-fallback">
+                                        <a href="/registration">სრული ფორმა ცალკე გვერდზე →</a>
+                                    </p>
                                 </form>
                             </div>
                         </div>
@@ -166,32 +331,22 @@
                                 <a href="/contact" class="flat-button">პროგრამების ნახვა</a>
                             </div>
                         </div>
-                        <div class="box-events-slide hero-register">
+                        <div class="box-events-slide hero-register hero-register-cta">
                             <span class="new-event">რეგისტრაცია</span>
                             <div class="content-event">
-                                <h2 class="title-event" data-cms="home.register.title">ჩარიცხე შენი შვილი</h2>
-                                <p class="hero-register-note" data-cms="home.register.note">შეავსე ფორმა და დაგიკავშირდებით</p>
-                                <form id="hero-register-form" class="hero-register-form" method="post" action="/" novalidate>
-                                    <fieldset>
-                                        <input type="text" name="name" required aria-required="true"
-                                            placeholder="მშობლის სახელი და გვარი" autocomplete="name">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="tel" name="phone" required aria-required="true"
-                                            placeholder="ტელეფონი" autocomplete="tel">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="email" name="email" required aria-required="true"
-                                            placeholder="ელფოსტა" autocomplete="email">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="text" name="childAge" placeholder="ბავშვის ასაკი"
-                                            inputmode="numeric">
-                                    </fieldset>
-                                    <button type="submit" class="flat-button hero-register-submit">
-                                        <span>რეგისტრაცია</span>
-                                    </button>
-                                </form>
+                                <h2 class="title-event" data-cms="home.register.title">აკადემიაში რეგისტრაციის ფორმა</h2>
+                                <p class="hero-register-note" data-cms="home.register.note">შეავსე განაცხადი და დაგიკავშირდებით 1–2 სამუშაო დღეში</p>
+                                <ul class="hero-register-needs">
+                                    <li>ბავშვისა და მშობლის მონაცემები</li>
+                                    <li>ბავშვის ფოტო</li>
+                                    <li>ფორმა 100</li>
+                                </ul>
+                                <a href="/registration" class="flat-button hero-register-submit">
+                                    <span>განაცხადის შევსება</span>
+                                </a>
+                                <p class="hero-wizard-fallback">
+                                    პირველ სლაიდზე ფორმის შევსებაც შეგიძლიათ.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -213,32 +368,22 @@
                                 <a href="/registration" class="flat-button">უფასო ვარჯიში</a>
                             </div>
                         </div>
-                        <div class="box-events-slide hero-register">
+                        <div class="box-events-slide hero-register hero-register-cta">
                             <span class="new-event">რეგისტრაცია</span>
                             <div class="content-event">
-                                <h2 class="title-event" data-cms="home.register.title">ჩარიცხე შენი შვილი</h2>
-                                <p class="hero-register-note" data-cms="home.register.note">შეავსე ფორმა და დაგიკავშირდებით</p>
-                                <form id="hero-register-form" class="hero-register-form" method="post" action="/" novalidate>
-                                    <fieldset>
-                                        <input type="text" name="name" required aria-required="true"
-                                            placeholder="მშობლის სახელი და გვარი" autocomplete="name">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="tel" name="phone" required aria-required="true"
-                                            placeholder="ტელეფონი" autocomplete="tel">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="email" name="email" required aria-required="true"
-                                            placeholder="ელფოსტა" autocomplete="email">
-                                    </fieldset>
-                                    <fieldset>
-                                        <input type="text" name="childAge" placeholder="ბავშვის ასაკი"
-                                            inputmode="numeric">
-                                    </fieldset>
-                                    <button type="submit" class="flat-button hero-register-submit">
-                                        <span>რეგისტრაცია</span>
-                                    </button>
-                                </form>
+                                <h2 class="title-event" data-cms="home.register.title">აკადემიაში რეგისტრაციის ფორმა</h2>
+                                <p class="hero-register-note" data-cms="home.register.note">შეავსე განაცხადი და დაგიკავშირდებით 1–2 სამუშაო დღეში</p>
+                                <ul class="hero-register-needs">
+                                    <li>ბავშვისა და მშობლის მონაცემები</li>
+                                    <li>ბავშვის ფოტო</li>
+                                    <li>ფორმა 100</li>
+                                </ul>
+                                <a href="/registration" class="flat-button hero-register-submit">
+                                    <span>განაცხადის შევსება</span>
+                                </a>
+                                <p class="hero-wizard-fallback">
+                                    პირველ სლაიდზე ფორმის შევსებაც შეგიძლიათ.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -301,13 +446,6 @@
                             <div class="line"></div>
                             <div class="about-button-group">
                                 <button class="flat-button wow fadeInUp animated">გაიგე მეტი</button>
-                                <div class="infor-about">
-                                    <img src="/images/about/info.png" alt="">
-                                    <div class="info">
-                                        <div class="name wow fadeInUp animated">[მწვრთნელის სახელი]</div>
-                                        <div class="job wow fadeInUp animated">მთავარი მწვრთნელი</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -552,7 +690,7 @@
                                 დაწყება 11:00 საათზე
                             </p>
                         </div>
-                        <img decoding="async" src="/images/evtent/event2.jpg" alt="ზაფხულის საფეხბურთო ბანაკი">
+                        <img decoding="async" src="/gua_hero.jpg" alt="გლდანის საბავშვო თასი">
                     </div>
                     <div class="tf-info-price">
                         <h4>მონაწილეობა</h4>
@@ -1201,11 +1339,11 @@
                     <div class="list-contact">
                         <div class="contact">
                             <span>ტელეფონი:</span>
-                            <div class="address">+995 5XX XX XX XX</div>
+                            <div class="address"><a href="tel:+995557007887">557 007 887</a></div>
                         </div>
                         <div class="contact">
                             <span>ელფოსტა:</span>
-                            <div class="address">info@gldaniunitedacademy.ge</div>
+                            <div class="address"><a href="mailto:gldani.united@gmail.com">gldani.united@gmail.com</a></div>
                         </div>
                     </div>
                     <ul class="social-media">
@@ -1328,10 +1466,10 @@
                                     </svg>
                                     <div class="address">
                                         <p>დაგვირეკეთ</p>
-                                        <span>+995 5XX XX XX XX</span>
+                                        <span><a href="tel:+995557007887">557 007 887</a></span>
                                     </div>
                                 </div>
-                                <p><i class="icon-MapPin"></i>თბილისი, გლდანი, [მისამართი]</p>
+                                <p><i class="icon-MapPin"></i><a href="https://maps.app.goo.gl/ZpRe6mFbU4BrJxFe8" target="_blank" rel="noopener">გლდანი 1 მიკრორაიონი, 39 საჯარო სკოლის ტერიტორია</a></p>
                                 <form action="#">
                                     <div class="input-new-letter">
                                         <input class="btn-email" name="email" id="email" type="email"

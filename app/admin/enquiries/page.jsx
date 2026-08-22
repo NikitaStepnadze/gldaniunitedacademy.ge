@@ -57,11 +57,17 @@ export default async function EnquiriesPage({ searchParams }) {
             {STATUS_LABELS[s]} <span className="admin-count">{counts[s]}</span>
           </Link>
         ))}
+        {/*
+          * The archive sits in the same row as the statuses because it is one
+          * more thing to filter by, but it is a view rather than a status --
+          * archived rows keep their own status -- so it links out to the
+          * archived list instead of adding `?status=`.
+          */}
         <Link
           href={archived ? '/admin/enquiries' : '/admin/enquiries?archived=1'}
-          style={{ marginLeft: 'auto' }}
+          aria-current={archived ? 'page' : undefined}
         >
-          {archived ? '← აქტიურები' : 'არქივი'}
+          {archived ? '← განაცხადები' : 'არქივი'}
         </Link>
       </div>
 

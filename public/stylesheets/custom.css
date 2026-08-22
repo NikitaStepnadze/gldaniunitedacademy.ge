@@ -824,6 +824,387 @@
 	}
 }
 
+/* ---------------------------------------------------------------------------
+   Hero registration wizard
+   The card now collects the full application (the same field set the
+   registration page posts) across four steps. Everything above still applies:
+   these rules add the step chrome, the parent tabs, the file rows and the
+   consent line, and they pin the card's height so stepping does not make the
+   hero jump.
+--------------------------------------------------------------------------- */
+
+/*
+ * Fixed height, sized to the tallest step (step 3, four inputs plus the tabs).
+ * Without it the card grows and shrinks between steps and the whole hero
+ * reflows under the parent's cursor. `min-height` rather than `height` so an
+ * error message or a long filename can still push it out rather than overflow.
+ */
+.hero-register-wizard .hero-wizard-step {
+	min-height: 296px;
+}
+
+/* --- progress ---------------------------------------------------------- */
+.hero-wizard-progress {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.hero-wizard-dots {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hero-wizard-dot {
+	width: 26px;
+	height: 4px;
+	border-radius: 2px;
+	background-color: rgba(255, 255, 255, 0.22);
+	transition: background-color 0.2s ease;
+}
+
+.hero-wizard-dot[data-state="done"] {
+	background-color: rgba(201, 162, 39, 0.55);
+}
+
+.hero-wizard-dot[data-state="current"] {
+	background-color: var(--gold, #c9a227);
+}
+
+.hero-wizard-count {
+	margin: 0;
+	font-size: 13px;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+/* --- step headings and helper text ------------------------------------- */
+.hero-wizard-legend {
+	margin-bottom: 12px;
+	font-size: 15px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.hero-wizard-hint {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: rgba(255, 255, 255, 0.55);
+}
+
+/*
+ * Labels for the inputs a placeholder cannot describe: `type="date"` and
+ * `type="time"` render their own format hint and ignore `placeholder`
+ * entirely, and a bare file input says nothing about what to attach.
+ */
+.hero-wizard-label {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- errors ------------------------------------------------------------ */
+.hero-wizard-error {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 1.35;
+	color: #ef9a9a;
+}
+
+.hero-wizard-error[hidden] {
+	display: none;
+}
+
+/* --- date, time and select share the text inputs' look ----------------- */
+/*
+ * Restated per type for the same reason the text inputs are: style.css targets
+ * `input[type="date"]` at (0,1,1), which ties a plain `.hero-register-form
+ * input`. Naming the type alongside the form class wins outright.
+ */
+.hero-register-form input[type="date"],
+.hero-register-form input[type="time"] {
+	width: 100%;
+	padding: 11px 14px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+	font-size: 14px;
+}
+
+/* Chrome's calendar and clock glyphs are near-black by default, which is
+   invisible on the translucent card. */
+.hero-register-form input[type="date"]::-webkit-calendar-picker-indicator,
+.hero-register-form input[type="time"]::-webkit-calendar-picker-indicator {
+	filter: invert(1);
+	opacity: 0.7;
+	cursor: pointer;
+}
+
+/* --- two fields on one row (school hours) ------------------------------ */
+.hero-wizard-pair {
+	display: flex;
+	gap: 10px;
+}
+
+.hero-wizard-field {
+	display: block;
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+/* --- parent tabs ------------------------------------------------------- */
+/*
+ * The API accepts either parent as long as one block is complete, so the card
+ * collects one and lets the parent switch, rather than showing eight inputs.
+ */
+.hero-wizard-tabs {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.hero-wizard-tab {
+	flex: 1 1 0;
+	padding: 8px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: 8px;
+	background-color: transparent;
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 14px;
+	cursor: pointer;
+	transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.hero-wizard-tab[aria-selected="true"] {
+	border-color: var(--gold, #c9a227);
+	background-color: rgba(201, 162, 39, 0.18);
+	color: #fff;
+}
+
+.hero-wizard-parent[hidden] {
+	display: none;
+}
+
+/* --- file rows --------------------------------------------------------- */
+.hero-wizard-file {
+	margin-bottom: 14px;
+}
+
+/*
+ * The native control cannot be restyled beyond its button, so the button is
+ * what gets styled: the rest of the row is the label above it and the filename
+ * list below.
+ */
+.hero-register-form input[type="file"] {
+	width: 100%;
+	font-size: 13px;
+	color: rgba(255, 255, 255, 0.75);
+}
+
+.hero-register-form input[type="file"]::file-selector-button {
+	margin-right: 10px;
+	padding: 7px 14px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: 6px;
+	background-color: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.hero-register-form input[type="file"]::-webkit-file-upload-button {
+	margin-right: 10px;
+	padding: 7px 14px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: 6px;
+	background-color: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.hero-wizard-files {
+	display: block;
+	margin-top: 6px;
+	font-size: 12px;
+	line-height: 1.35;
+	word-break: break-word;
+	color: #a5d6a7;
+}
+
+.hero-wizard-files[hidden] {
+	display: none;
+}
+
+/* --- consent ----------------------------------------------------------- */
+.hero-wizard-consent {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: start;
+	gap: 4px 8px;
+	margin-top: 4px;
+}
+
+.hero-wizard-consent input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	margin: 2px 0 0;
+	accent-color: var(--gold, #c9a227);
+	cursor: pointer;
+}
+
+.hero-wizard-consent label {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: rgba(255, 255, 255, 0.75);
+	cursor: pointer;
+}
+
+/* Spans both columns so it lines up under the text, not beside the box. */
+.hero-wizard-consent .hero-wizard-error {
+	grid-column: 1 / -1;
+}
+
+/* --- navigation -------------------------------------------------------- */
+.hero-wizard-nav {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 14px;
+}
+
+/* The Continue and Submit buttons are `.hero-register-submit`, which is
+   `width: 100%`; in the row they share, flex sizing takes over. */
+.hero-wizard-nav .hero-register-submit {
+	flex: 1 1 auto;
+	margin-top: 0;
+	width: auto;
+}
+
+.hero-wizard-back {
+	flex: 0 0 auto;
+	padding: 10px 16px;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	border-radius: 8px;
+	background-color: transparent;
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 14px;
+	cursor: pointer;
+	transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.hero-wizard-back:hover {
+	border-color: var(--gold, #c9a227);
+	color: #fff;
+}
+
+.hero-wizard-back[disabled] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.hero-wizard-nav [hidden] {
+	display: none;
+}
+
+/* --- link to the standalone page --------------------------------------- */
+/*
+ * The card is a convenience, not the only way in. Anyone who would rather have
+ * the whole form on one screen -- or hits trouble attaching a file here -- gets
+ * a way out on every step.
+ */
+.hero-wizard-fallback {
+	margin: 10px 0 0;
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.55);
+}
+
+.hero-wizard-fallback a {
+	color: rgba(255, 255, 255, 0.75);
+	text-decoration: underline;
+}
+
+.hero-wizard-fallback a:hover {
+	color: var(--gold, #c9a227);
+}
+
+/* ---------------------------------------------------------------------------
+   Hero CTA card (slides 2 and 3)
+   Only slide 1 carries a live form -- three copies would mean duplicate ids,
+   three sets of step state, and a half-filled form stranded on a slide the
+   parent has left. These slides point at /registration instead.
+--------------------------------------------------------------------------- */
+.hero-register-needs {
+	margin: 0 0 18px;
+	padding: 0;
+	list-style: none;
+}
+
+.hero-register-needs li {
+	position: relative;
+	padding-left: 18px;
+	margin-bottom: 6px;
+	font-size: 14px;
+	line-height: 1.45;
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-register-needs li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 8px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: var(--gold, #c9a227);
+}
+
+/* `.hero-register-submit` is a <button> on slide 1 and an <a> here, so the
+   anchor needs the text centred and the block behaviour spelled out. */
+a.hero-register-submit {
+	display: block;
+	width: 100%;
+	text-align: center;
+}
+
+/* --- phones ------------------------------------------------------------ */
+/*
+ * The slider is short on vertical room on phones. The steps get shorter and
+ * tighter, and the school-hours pair stacks -- two time inputs side by side
+ * leave neither wide enough to read.
+ */
+@media only screen and (max-width: 767px) {
+	.hero-register-wizard .hero-wizard-step {
+		min-height: 0;
+	}
+
+	.hero-wizard-pair {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.hero-wizard-legend {
+		margin-bottom: 10px;
+		font-size: 14px;
+	}
+
+	.hero-register-form input[type="date"],
+	.hero-register-form input[type="time"] {
+		padding: 10px 12px;
+	}
+}
+
 /* File attachment field on the contact form. */
 .files-wrap {
 	margin-bottom: 20px;
@@ -1054,9 +1435,15 @@
  *
  * The stock template assumes image-v1 is a tall portrait and image-v2 a smaller
  * portrait sized by its own natural dimensions. Our photos are a landscape
- * 1280x960 (tab1) and a portrait 612x918 (tab2), so image-v1 rendered short and
- * wide while the absolutely-positioned image-v2 stood taller than its own
- * parent -- it spilled past the bottom and broke the overlap.
+ * 1280x960 (tab1) and a panoramic 1152x442 (gua_hero22), so image-v1 rendered
+ * short and wide while the absolutely-positioned image-v2 stood taller than its
+ * own parent -- it spilled past the bottom and broke the overlap.
+ *
+ * image-v2 is a 3:2 landscape crop, not the stock portrait: gua_hero22 is a
+ * 2.6:1 panorama of a match against the mountains, and a portrait slot cropped
+ * away most of its width. Its own ratio at this width would be a thin sliver,
+ * so 3:2 is the compromise -- wide enough to keep the frame, tall enough to
+ * still read as a photo. Width is 52% to match.
  *
  * Only the sizing is corrected here. The offsets stay in responsive.css, which
  * already walks image-v2 inward at 1199px and 991px and hides it below 767px;
@@ -1072,9 +1459,9 @@
 }
 
 .image-mission-wrap .image-v2 {
-	width: 42%;
+	width: 52%;
 	height: auto;
-	aspect-ratio: 3 / 4;
+	aspect-ratio: 3 / 2;
 	object-fit: cover;
 	object-position: center;
 	display: block;
@@ -1689,4 +2076,571 @@
 	.registration-form textarea {
 		font-size: 16px;
 	}
+}
+
+/* =======================================================================
+   Date and time pickers
+   =======================================================================
+   `<input type="date">` and `<input type="time">` are replaced at runtime by
+   app/components/datePickers.js with a row of selects -- day/month/year, and
+   24-hour hour/minute -- because the native calendar takes a decade of paging
+   to reach a birth year and the native clock renders an AM/PM segment that
+   means nothing to a Georgian audience.
+
+   The original input becomes a hidden field carrying the same name and the
+   same YYYY-MM-DD / HH:MM value, so only the visible row needs styling. That
+   hidden input is also where the form puts `aria-invalid`, which is why the
+   error state below is matched on the group with :has() rather than on the
+   selects themselves. */
+
+.picker-group {
+	display: flex;
+	gap: 6px;
+	align-items: stretch;
+}
+
+.picker-group select {
+	flex: 1 1 0;
+	min-width: 0;
+	/* Trims the browser's default row height, which is what makes an unstyled
+	   select look taller than the text inputs beside it. */
+	text-overflow: ellipsis;
+}
+
+/*
+ * The month name is much longer than a day or a year, so the three do not
+ * split evenly: the month takes the slack and the two numbers stay narrow.
+ */
+.picker-date select[data-part="day"] {
+	flex: 0 0 20%;
+}
+
+.picker-date select[data-part="year"] {
+	flex: 0 0 26%;
+}
+
+/* Hour and minute are both two digits -- an even split, kept narrow. */
+.picker-time select {
+	flex: 1 1 50%;
+}
+
+/* --- on the hero card (white on translucent) --------------------------- */
+/*
+ * Named alongside the form class for the reason the inputs are: style.css
+ * targets bare `select` at a specificity a lone `.hero-register-form select`
+ * only ties.
+ */
+.hero-register-form .picker-group select {
+	height: auto;
+	padding: 9px 8px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	/*
+	 * White rather than the translucent dark the text inputs use. A `select`
+	 * paints its dropdown list from its own background, so a dark closed field
+	 * opened a dark grey list -- fine for one line, heavy for the 31/12/15-row
+	 * lists these carry. White keeps the open list light and compact.
+	 */
+	background-color: #fff;
+	color: var(--navy, #16244f);
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 18px;
+	appearance: none;
+	-webkit-appearance: none;
+	/* Room for the chevron drawn below, so a long month name cannot run under it. */
+	padding-right: 22px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2316244f' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 7px center;
+	background-size: 9px 6px;
+}
+
+/* The placeholder row reads as a hint, not as a chosen value. */
+.hero-register-form .picker-group select:invalid,
+.hero-register-form .picker-group select option[value=""] {
+	color: var(--secondary-one, #8a93a8);
+}
+
+.hero-register-form .picker-group select option {
+	color: var(--navy, #16244f);
+	background-color: #fff;
+}
+
+.hero-register-form .picker-group select:focus {
+	outline: none;
+	border-color: var(--gold, #c9a227);
+	box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.25);
+}
+
+.hero-register-form .picker-group:has([aria-invalid="true"]) select {
+	border-color: #e57373;
+}
+
+/* --- on the registration page (navy on white) -------------------------- */
+.registration-form .picker-group select {
+	height: auto;
+	padding: 12px 10px;
+	padding-right: 28px;
+	border: 1px solid var(--line, #dde3ef);
+	border-radius: 8px;
+	background-color: var(--white, #fff);
+	color: var(--navy, #16244f);
+	font-family: "Jost", sans-serif;
+	font-size: 15px;
+	line-height: 24px;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2316244f' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 10px 7px;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.registration-form .picker-group select:focus {
+	outline: none;
+	border-color: var(--gold, #c9a227);
+	box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.16);
+}
+
+.registration-form .picker-group:has([aria-invalid="true"]) select {
+	border-color: #c62828;
+	background-color: #fff8f8;
+}
+
+/* The school-hours pair puts two time pickers side by side; below ~380px the
+   four selects that makes get too narrow to read, so the pair stacks. */
+@media (max-width: 380px) {
+	.hero-wizard-pair {
+		flex-direction: column;
+	}
+}
+
+/*
+ * Registration and contact page banners. Same scoping as .page-title-about
+ * above: .page-title carries the theme default image for every other page,
+ * so each photo is pinned to the one page that uses it. Paths are relative
+ * to this stylesheet, hence ../ up to public/.
+ */
+.page-title.page-title-registration {
+	background-image: url(../gldaniregister.jpg);
+}
+
+.page-title.page-title-contact {
+	background-image: url(../stadium-football-league-soccer-ball-soccer-2026-03-25-08-29-22-utc.jpg);
+}
+
+/*
+ * About page contact section (map + enquiry form) background.
+ *
+ * The whole rule has to live here, not just the image. The theme styles this
+ * section in shortcodes.css -- background, `position: relative`, and a 0.6
+ * black `:before` overlay -- but manifest.json never loads that file (same gap
+ * documented for .background-black above), so none of it was ever applied.
+ *
+ * That makes all three parts load-bearing:
+ *   - `position: relative` scopes the overlay to the section. Without it the
+ *     absolute `:before` resolves against the page and covers the viewport.
+ *   - the overlay keeps the form legible. gua_hero3 is a floodlit stadium with
+ *     a bright sunlit pitch, and .background-black paints the form's text
+ *     white -- white on that grass is unreadable without it.
+ *   - `z-index: 1` on the two columns lifts them above the overlay, which the
+ *     theme did via the same missing file.
+ *
+ * Only the about page uses this section, so no page-scoping class is needed.
+ */
+.tf-widget-form-contact {
+	position: relative;
+	background-image: url(../gua_hero3.jpg);
+	background-attachment: fixed;
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-position: center;
+	width: 100%;
+}
+
+.tf-widget-form-contact:before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	background-color: rgba(18, 18, 18, 0.6);
+	z-index: 0;
+}
+
+.tf-widget-form-contact .tf-form-contact {
+	position: relative;
+	z-index: 1;
+}
+
+/*
+ * Event cards on the home page -- image as the card backdrop.
+ *
+ * Same shortcodes.css gap as the section above. The theme builds these cards as
+ * a flex row with the <img> absolutely positioned to cover the whole card and
+ * the copy layered over it in a black panel. None of that loads, so the img was
+ * rendering as a plain inline block at its natural size -- landing after the
+ * text instead of behind it, and stretching the card to the photo's full height.
+ *
+ * Restored here is only what makes the photo read as a backdrop; the theme's
+ * decorative angled panels and striped dividers are left out deliberately,
+ * since they are a larger redesign than these cards currently need.
+ *
+ * `align-items: stretch` matters: it gives .event-infomation a definite height
+ * for the absolutely-positioned image to fill. Without it the image collapses.
+ */
+.widget-event .item {
+	display: flex;
+	align-items: stretch;
+	justify-content: space-between;
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+}
+
+.widget-event .item:not(:last-child) {
+	margin-bottom: 38px;
+}
+
+.widget-event .event-infomation {
+	position: relative;
+	min-height: 320px;
+}
+
+.widget-event .event-infomation img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	z-index: 0;
+}
+
+/*
+ * The copy sits above the photo. A translucent black plate rather than the
+ * theme's opaque clip-path panel -- it keeps the white text readable over a
+ * sunlit pitch while still letting the photo show through.
+ */
+.widget-event .event-infomation .info {
+	position: relative;
+	z-index: 2;
+	height: 100%;
+	max-width: 460px;
+	padding: 40px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	background-color: rgba(18, 18, 18, 0.72);
+}
+
+.widget-event .event-infomation .info h4,
+.widget-event .event-infomation .info h4 a,
+.widget-event .event-infomation .info p {
+	color: var(--white, #fff);
+}
+
+.widget-event .tf-info-price {
+	position: relative;
+	z-index: 2;
+	padding: 54px 40px;
+	background-color: var(--black);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.widget-event .tf-info-price h4,
+.widget-event .tf-info-price .price,
+.widget-event .tf-info-price .price span {
+	color: var(--white, #fff);
+}
+
+/*
+ * Below 767px responsive.css stacks the card (flex-direction: column) and takes
+ * both halves to full width, so the photo half needs its own height again --
+ * the flex row is gone and nothing else gives it one.
+ */
+@media only screen and (max-width: 767px) {
+	.widget-event .event-infomation {
+		min-height: 260px;
+	}
+}
+
+/* Contact form — question enquiry, sent over WhatsApp
+ * ------------------------------------------------------------------------
+ * The theme lays this form out as a 2x2 float grid (name/phone left,
+ * email/age right). The form is now three fields, so the shortcodes rules
+ * strand the email field in a half-width right float with a hole beside it.
+ * Name and phone keep the pair; email spans the row underneath.
+ */
+.contact-page .name-wrap {
+	width: 48%;
+	float: left;
+	margin-bottom: 24px;
+}
+
+.contact-page .phone-wrap {
+	width: 48%;
+	float: right;
+	margin-bottom: 24px;
+}
+
+.contact-page .email-wrap {
+	clear: both;
+	float: none;
+	width: 100%;
+	margin-bottom: 24px;
+}
+
+@media only screen and (max-width: 767px) {
+	.contact-page .name-wrap,
+	.contact-page .phone-wrap {
+		width: 100%;
+		float: none;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Registration success modal
+   Shown by app/components/successModal.js after either registration form is
+   accepted. The overlay is appended to <body>, so nothing here may depend on
+   an ancestor in the page markup.
+   ------------------------------------------------------------------------- */
+
+.success-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.success-modal-backdrop {
+	position: absolute;
+	inset: 0;
+	background-color: rgba(11, 18, 40, 0.62);
+	backdrop-filter: blur(3px);
+	opacity: 0;
+	transition: opacity 0.22s ease;
+}
+
+.success-modal.is-open .success-modal-backdrop {
+	opacity: 1;
+}
+
+.success-modal-card {
+	position: relative;
+	width: 100%;
+	max-width: 460px;
+	max-height: calc(100vh - 48px);
+	overflow-y: auto;
+	padding: 40px 32px 32px;
+	border-radius: 14px;
+	background-color: #fff;
+	box-shadow: 0 24px 60px rgba(11, 18, 40, 0.35);
+	text-align: center;
+
+	/* Rises and settles rather than just fading, so it reads as a card that
+	   arrived in response to the submit. */
+	opacity: 0;
+	transform: translateY(18px) scale(0.96);
+	transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+.success-modal.is-open .success-modal-card {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+.success-modal-x {
+	position: absolute;
+	top: 10px;
+	right: 14px;
+	width: 34px;
+	height: 34px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--secondary-one, #8a93a8);
+	font-size: 26px;
+	line-height: 1;
+	cursor: pointer;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.success-modal-x:hover {
+	background-color: #f1f3f7;
+	color: var(--navy, #16244f);
+}
+
+/* --- the tick ------------------------------------------------------------ */
+
+.success-modal-icon {
+	width: 84px;
+	height: 84px;
+	margin: 0 auto 20px;
+}
+
+.success-modal-icon svg {
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.success-modal-ring {
+	stroke: #2e9e5b;
+	stroke-width: 3;
+	/* 2*pi*r, so the dash can draw the circle exactly once. */
+	stroke-dasharray: 151;
+	stroke-dashoffset: 151;
+	transform: rotate(-90deg);
+	transform-origin: 50% 50%;
+}
+
+.success-modal-tick {
+	stroke: #2e9e5b;
+	stroke-width: 4;
+	stroke-dasharray: 40;
+	stroke-dashoffset: 40;
+}
+
+/* Drawn only once the card is in place: the ring sweeps, then the tick follows
+   it, which is what makes the confirmation feel like it happened just now. */
+.success-modal.is-open .success-modal-ring {
+	animation: success-modal-draw 0.5s ease-out 0.12s forwards;
+}
+
+.success-modal.is-open .success-modal-tick {
+	animation: success-modal-draw 0.32s ease-out 0.5s forwards;
+}
+
+@keyframes success-modal-draw {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+/* --- copy ---------------------------------------------------------------- */
+
+.success-modal-title {
+	margin: 0 0 12px;
+	font-family: "Oswald", sans-serif;
+	font-size: 24px;
+	line-height: 32px;
+	color: var(--navy, #16244f);
+}
+
+.success-modal-body {
+	margin: 0 0 26px;
+	font-size: 16px;
+	line-height: 26px;
+	color: var(--secondary-one, #5c667e);
+}
+
+.success-modal-ok {
+	min-width: 160px;
+	padding: 13px 28px;
+	border: 0;
+	border-radius: 6px;
+	background-color: var(--gold, #c9a227);
+	color: var(--navy, #16244f);
+	font-family: "Oswald", sans-serif;
+	font-size: 15px;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.success-modal-ok:hover {
+	background-color: var(--navy, #16244f);
+	color: var(--gold, #c9a227);
+}
+
+.success-modal-ok:focus-visible,
+.success-modal-x:focus-visible {
+	outline: 2px solid var(--navy, #16244f);
+	outline-offset: 2px;
+}
+
+@media only screen and (max-width: 575px) {
+	.success-modal-card {
+		padding: 34px 22px 26px;
+	}
+
+	.success-modal-title {
+		font-size: 21px;
+		line-height: 29px;
+	}
+
+	.success-modal-body {
+		font-size: 15px;
+		line-height: 24px;
+	}
+}
+
+/* Movement is decoration here; the card must still appear for anyone who has
+   asked the system for less of it. */
+@media (prefers-reduced-motion: reduce) {
+	.success-modal-backdrop,
+	.success-modal-card {
+		transition-duration: 0.01ms;
+	}
+
+	.success-modal-card {
+		transform: none;
+	}
+
+	.success-modal.is-open .success-modal-ring,
+	.success-modal.is-open .success-modal-tick {
+		animation: none;
+		stroke-dashoffset: 0;
+	}
+}
+
+/*
+ * Email addresses inside headings -- keep them on the body face.
+ *
+ * colors/color1.css applies `--font-display` (Dachi The Lynx) to h1-h6 with
+ * `!important`. That face carries only 148 glyphs: `@` is mapped in its cmap
+ * and reserves a normal advance width (859), but draws no outline -- so
+ * `gldani.united@gmail.com` renders as "GLDANI.UNITED  GMAIL.COM" with a blank
+ * gap where the `@` should be. It reads as a typo in the content, but the
+ * markup is correct; the glyph is simply missing from the font.
+ *
+ * `--font-body` (BPG SuperSquare) has verified Latin, digit and punctuation
+ * coverage, so the address renders intact there. `!important` is required to
+ * beat the `!important` on the display-face rule.
+ *
+ * Scoped to mailto: links so only addresses move off the display face --
+ * Georgian headings keep it. Applies wherever the pattern occurs, not just the
+ * contact page, since the same h6 + mailto markup is used in the footer.
+ */
+h1 a[href^="mailto:"],
+h2 a[href^="mailto:"],
+h3 a[href^="mailto:"],
+h4 a[href^="mailto:"],
+h5 a[href^="mailto:"],
+h6 a[href^="mailto:"],
+a[href^="mailto:"] h1,
+a[href^="mailto:"] h2,
+a[href^="mailto:"] h3,
+a[href^="mailto:"] h4,
+a[href^="mailto:"] h5,
+a[href^="mailto:"] h6 {
+	font-family: var(--font-body) !important;
+	text-transform: none;
+	letter-spacing: 0;
 }

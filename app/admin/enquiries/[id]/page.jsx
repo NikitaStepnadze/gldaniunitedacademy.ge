@@ -6,11 +6,19 @@ import { isAuthenticated } from '../../../../lib/appwrite/auth';
 import {
   deleteEnquiry,
   getEnquiry,
+  setEnquiryFiles,
   STATUSES,
   STATUS_LABELS,
   updateEnquiry,
+  updateEnquiryDetails,
+  validateEnquiryEdit,
 } from '../../../../lib/appwrite/enquiries';
-import { deleteFiles, getFilesMeta } from '../../../../lib/appwrite/files';
+import {
+  deleteFiles,
+  getFilesMeta,
+  uploadChildPhoto,
+  uploadEnquiryFile,
+} from '../../../../lib/appwrite/files';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +36,68 @@ function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Per-field messages for a rejected edit, keyed by field then reason.
+ *
+ * Mirrors validateEnquiryEdit's reasons. The editor is laxer than the public
+ * form -- blank is allowed everywhere -- so there is no 'required' variant
+ * here; only values that are present and malformed are reported.
+ */
+const EDIT_ERRORS = {
+  childIdNumber: { invalid: 'პირადი ნომერი უნდა შედგებოდეს 11 ციფრისგან' },
+  childDob: {
+    invalid: 'თარიღი არასწორია',
+    out_of_range: 'აკადემია იღებს 4-დან 17 წლამდე ბავშვებს',
+  },
+  schoolFrom: { invalid: 'დრო არასწორია (სთ:წთ)' },
+  schoolTo: {
+    invalid: 'დრო არასწორია (სთ:წთ)',
+    order: 'დამთავრების დრო უნდა იყოს დაწყების დროზე გვიან',
+  },
+  motherIdNumber: { invalid: 'პირადი ნომერი უნდა შედგებოდეს 11 ციფრისგან' },
+  motherPhone: { invalid: 'ნომერი არასწორია' },
+  fatherIdNumber: { invalid: 'პირადი ნომერი უნდა შედგებოდეს 11 ციფრისგან' },
+  fatherPhone: { invalid: 'ნომერი არასწორია' },
+  email: { invalid: 'ელფოსტა არასწორია' },
+  phone: { invalid: 'ნომერი არასწორია' },
+};
+
+/** Messages for a rejected upload, keyed by the helper's error code. */
+const UPLOAD_ERRORS = {
+  file_too_large: 'ფაილი ძალიან დიდია. მაქსიმუმი 10 MB.',
+  file_type_not_allowed: 'დაშვებულია მხოლოდ PDF, JPG, PNG, WebP და HEIC.',
+  photo_type_not_allowed: 'ფოტო უნდა იყოს JPG, PNG, WebP ან HEIC.',
+  photo_required: 'აირჩიეთ ფაილი.',
+  invalid_file: 'აირჩიეთ ფაილი.',
+  no_file: 'აირჩიეთ ფაილი.',
+};
+
+/**
+ * Renders one editable text field, with its error slot.
+ *
+ * A helper rather than repeated JSX: the editor has twenty of these and the
+ * label/input/error trio has to stay identical across all of them.
+ */
+function Field({ name, label, value, type = 'text', errors, ...rest }) {
+  const reason = errors?.[name];
+  const message = reason ? (EDIT_ERRORS[name]?.[reason] ?? 'მნიშვნელობა არასწორია') : '';
+
+  return (
+    <div className="admin-field">
+      <label htmlFor={`edit-${name}`}>{label}</label>
+      <input
+        id={`edit-${name}`}
+        name={name}
+        type={type}
+        defaultValue={value ?? ''}
+        aria-invalid={message ? 'true' : undefined}
+        {...rest}
+      />
+      {message && <span className="admin-error">{message}</span>}
+    </div>
+  );
 }
 
 export default async function EnquiryDetailPage({ params, searchParams }) {
@@ -55,6 +125,25 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
   // The child's photo is stored in its own column so it can be shown as a
   // portrait rather than as one more row in the attachment list.
   const [photo] = enquiry.photoId ? await getFilesMeta([enquiry.photoId]) : [];
+
+  /*
+   * Editor state, carried in the URL.
+   *
+   * `edit=1` opens the form; a rejected save redirects back with it set so the
+   * reader lands on the form rather than on the read-only view. `err` is the
+   * packed `field:reason` list validateEnquiryEdit produced.
+   */
+  const isEditing = query?.edit === '1';
+
+  const editErrors = Object.fromEntries(
+    String(query?.err ?? '')
+      .split(',')
+      .filter(Boolean)
+      .map((pair) => pair.split(':'))
+      .filter(([field, reason]) => field && reason)
+  );
+
+  const uploadError = UPLOAD_ERRORS[String(query?.uploadErr ?? '')] ?? '';
 
   // Registrations carry the child's and parents' details; contact enquiries do
   // not, and their extra rows would all read "—".
@@ -139,6 +228,100 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
   // boundary.
   const isArchived = enquiry.archived;
   const photoId = enquiry.photoId;
+  const currentFileIds = enquiry.fileIds ?? [];
+
+  /**
+   * Saves an edit of the details the parent submitted.
+   *
+   * Field errors are carried back through the query string rather than held in
+   * component state: this is a server-rendered form with no client component,
+   * so a redirect is the only way back to the page, and a redirect discards
+   * anything not in the URL. They are short reason codes, not messages.
+   */
+  async function saveDetails(formData) {
+    'use server';
+
+    const input = {};
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === 'string') input[key] = value;
+    }
+
+    const { data, errors } = validateEnquiryEdit(input, { isRegistration });
+
+    if (errors) {
+      const packed = Object.entries(errors)
+        .map(([field, reason]) => `${field}:${reason}`)
+        .join(',');
+      redirect(
+        `/admin/enquiries/${id}?edit=1&err=${encodeURIComponent(packed)}`
+      );
+    }
+
+    await updateEnquiryDetails(id, data);
+
+    revalidatePath(`/admin/enquiries/${id}`);
+    // The list shows name and phone, which an edit can change.
+    revalidatePath('/admin/enquiries');
+    redirect(`/admin/enquiries/${id}?saved=1`);
+  }
+
+  /**
+   * Attaches or replaces one document.
+   *
+   * `which` picks the target: the photo lives in its own column and is
+   * type-checked as an image, form 100 is the single entry in fileIds. An
+   * existing file is deleted only after the replacement is safely stored, so a
+   * failed upload cannot leave the record with nothing.
+   */
+  async function uploadDocument(formData) {
+    'use server';
+
+    const which = String(formData.get('which') ?? '');
+    const file = formData.get('file');
+
+    if (!file || typeof file !== 'object' || file.size === 0) {
+      redirect(`/admin/enquiries/${id}?edit=1&uploadErr=no_file`);
+    }
+
+    let newId;
+    try {
+      newId = which === 'photo' ? await uploadChildPhoto(file) : await uploadEnquiryFile(file);
+    } catch (error) {
+      const code = UPLOAD_ERRORS[error.message] ? error.message : 'invalid_file';
+      redirect(`/admin/enquiries/${id}?edit=1&uploadErr=${code}`);
+    }
+
+    // Recorded on the row before the old file is removed: if the delete fails
+    // the record is still correct, and the leftover is a stray file rather than
+    // a document the panel claims to have but cannot open.
+    const replaced =
+      which === 'photo'
+        ? await setEnquiryFiles(id, { photoId: newId }).then(() => photoId)
+        : await setEnquiryFiles(id, { fileIds: [newId] }).then(() => currentFileIds[0]);
+
+    if (replaced) await deleteFiles([replaced]);
+
+    revalidatePath(`/admin/enquiries/${id}`);
+    redirect(`/admin/enquiries/${id}?saved=1`);
+  }
+
+  /** Detaches one document and deletes its bytes. */
+  async function removeDocument(formData) {
+    'use server';
+
+    const which = String(formData.get('which') ?? '');
+    const target = which === 'photo' ? photoId : currentFileIds[0];
+
+    if (which === 'photo') await setEnquiryFiles(id, { photoId: '' });
+    else await setEnquiryFiles(id, { fileIds: [] });
+
+    // After the row no longer points at it, so a failed delete leaves a stray
+    // file rather than a broken reference.
+    if (target) await deleteFiles([target]);
+
+    revalidatePath(`/admin/enquiries/${id}`);
+    redirect(`/admin/enquiries/${id}?saved=1`);
+  }
 
   async function toggleArchive() {
     'use server';
@@ -183,9 +366,247 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
       </p>
 
       {query?.saved === '1' && <p className="admin-msg ok">შენახულია.</p>}
+      {Object.keys(editErrors).length > 0 && (
+        <p className="admin-msg error">გთხოვთ შეასწოროთ მონიშნული ველები.</p>
+      )}
+      {uploadError && <p className="admin-msg error">{uploadError}</p>}
 
       <div className="admin-grid">
         <div>
+          {/*
+            The editor replaces the read-only panels rather than sitting beside
+            them: two copies of the same twenty values, one editable and one
+            not, invites editing the wrong one.
+          */}
+          {isEditing ? (
+            <div className="admin-panel">
+              <h2>მონაცემების რედაქტირება</h2>
+              <p style={{ color: '#8a93a8', fontSize: 13, margin: '-8px 0 18px' }}>
+                ცარიელი ველი დასაშვებია — შეავსეთ ის, რაც ცნობილია.
+              </p>
+
+              <form action={saveDetails}>
+                {isRegistration ? (
+                  <>
+                    <fieldset className="admin-fieldset">
+                      <legend>ბავშვი</legend>
+                      <div className="admin-field-row">
+                        <Field
+                          name="childFirstName"
+                          label="სახელი"
+                          value={enquiry.childFirstName}
+                          errors={editErrors}
+                        />
+                        <Field
+                          name="childLastName"
+                          label="გვარი"
+                          value={enquiry.childLastName}
+                          errors={editErrors}
+                        />
+                      </div>
+                      <div className="admin-field-row">
+                        <Field
+                          name="childIdNumber"
+                          label="პირადი ნომერი"
+                          value={enquiry.childIdNumber}
+                          errors={editErrors}
+                          inputMode="numeric"
+                          maxLength={16}
+                        />
+                        {/* Age is derived from this date, never edited beside
+                            it, so the two cannot contradict each other. */}
+                        <Field
+                          name="childDob"
+                          label="დაბადების თარიღი"
+                          value={enquiry.childDob}
+                          type="date"
+                          errors={editErrors}
+                        />
+                      </div>
+                      <Field
+                        name="address"
+                        label="მისამართი"
+                        value={enquiry.address}
+                        errors={editErrors}
+                      />
+                      <div className="admin-field-row">
+                        <Field
+                          name="schoolFrom"
+                          label="სკოლა — დან"
+                          value={enquiry.schoolFrom}
+                          type="time"
+                          errors={editErrors}
+                        />
+                        <Field
+                          name="schoolTo"
+                          label="სკოლა — მდე"
+                          value={enquiry.schoolTo}
+                          type="time"
+                          errors={editErrors}
+                        />
+                      </div>
+                    </fieldset>
+
+                    <fieldset className="admin-fieldset">
+                      <legend>დედა</legend>
+                      <div className="admin-field-row">
+                        <Field
+                          name="motherFirstName"
+                          label="სახელი"
+                          value={enquiry.motherFirstName}
+                          errors={editErrors}
+                        />
+                        <Field
+                          name="motherLastName"
+                          label="გვარი"
+                          value={enquiry.motherLastName}
+                          errors={editErrors}
+                        />
+                      </div>
+                      <div className="admin-field-row">
+                        <Field
+                          name="motherIdNumber"
+                          label="პირადი ნომერი"
+                          value={enquiry.motherIdNumber}
+                          errors={editErrors}
+                          inputMode="numeric"
+                          maxLength={16}
+                        />
+                        <Field
+                          name="motherPhone"
+                          label="ტელეფონი"
+                          value={enquiry.motherPhone}
+                          type="tel"
+                          errors={editErrors}
+                        />
+                      </div>
+                    </fieldset>
+
+                    <fieldset className="admin-fieldset">
+                      <legend>მამა</legend>
+                      <div className="admin-field-row">
+                        <Field
+                          name="fatherFirstName"
+                          label="სახელი"
+                          value={enquiry.fatherFirstName}
+                          errors={editErrors}
+                        />
+                        <Field
+                          name="fatherLastName"
+                          label="გვარი"
+                          value={enquiry.fatherLastName}
+                          errors={editErrors}
+                        />
+                      </div>
+                      <div className="admin-field-row">
+                        <Field
+                          name="fatherIdNumber"
+                          label="პირადი ნომერი"
+                          value={enquiry.fatherIdNumber}
+                          errors={editErrors}
+                          inputMode="numeric"
+                          maxLength={16}
+                        />
+                        <Field
+                          name="fatherPhone"
+                          label="ტელეფონი"
+                          value={enquiry.fatherPhone}
+                          type="tel"
+                          errors={editErrors}
+                        />
+                      </div>
+                    </fieldset>
+
+                    {/*
+                      Which parent the list's name and phone columns come from.
+                      A choice rather than a derived value once both blocks are
+                      filled in; with only one named block the validator picks
+                      that one regardless of what is posted here.
+                    */}
+                    <fieldset className="admin-fieldset">
+                      <legend>საკონტაქტო მშობელი</legend>
+                      <div className="admin-radio-row">
+                        <label className="admin-radio">
+                          <input
+                            type="radio"
+                            name="contactParent"
+                            value="mother"
+                            defaultChecked={enquiry.contactParent !== 'father'}
+                          />
+                          დედა
+                        </label>
+                        <label className="admin-radio">
+                          <input
+                            type="radio"
+                            name="contactParent"
+                            value="father"
+                            defaultChecked={enquiry.contactParent === 'father'}
+                          />
+                          მამა
+                        </label>
+                      </div>
+                    </fieldset>
+                  </>
+                ) : (
+                  /* A contact enquiry carries far less: these five fields are
+                     everything the form collected. */
+                  <fieldset className="admin-fieldset">
+                    <legend>შეტყობინების ავტორი</legend>
+                    <Field
+                      name="name"
+                      label="სახელი და გვარი"
+                      value={enquiry.name}
+                      errors={editErrors}
+                    />
+                    <div className="admin-field-row">
+                      <Field
+                        name="email"
+                        label="ელფოსტა"
+                        value={enquiry.email}
+                        type="email"
+                        errors={editErrors}
+                      />
+                      <Field
+                        name="phone"
+                        label="ტელეფონი"
+                        value={enquiry.phone}
+                        type="tel"
+                        errors={editErrors}
+                      />
+                    </div>
+                    <Field
+                      name="childAge"
+                      label="ბავშვის ასაკი"
+                      value={enquiry.childAge}
+                      errors={editErrors}
+                    />
+                  </fieldset>
+                )}
+
+                <div className="admin-field">
+                  <label htmlFor="edit-message">
+                    {isRegistration ? 'დამატებითი ინფორმაცია' : 'შეტყობინება'}
+                  </label>
+                  <textarea
+                    id="edit-message"
+                    name="message"
+                    rows={4}
+                    defaultValue={enquiry.message ?? ''}
+                  />
+                </div>
+
+                <div className="admin-panel-actions">
+                  <button type="submit" className="admin-btn">
+                    შენახვა
+                  </button>
+                  <Link href={`/admin/enquiries/${id}`} className="admin-btn secondary">
+                    გაუქმება
+                  </Link>
+                </div>
+              </form>
+            </div>
+          ) : (
+          <>
           <div className="admin-panel">
             <h2>განაცხადის მონაცემები</h2>
             <dl className="admin-dl">
@@ -304,63 +725,148 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
               )}
             </div>
           )}
-
-          {photo && (
-            <div className="admin-panel">
-              <h2>ბავშვის ფოტო</h2>
-              {/*
-                Served through the admin file proxy, not from Appwrite directly:
-                the bucket grants no public read, deliberately, because these are
-                children's photos. A plain <img> is used rather than next/image
-                because the proxy route is admin-authenticated and the optimiser
-                would need its own access to fetch the source.
-              */}
-              <a href={`/api/admin/files/${photo.id}`} target="_blank" rel="noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/api/admin/files/${photo.id}`}
-                  alt={childName}
-                  style={{
-                    display: 'block',
-                    maxWidth: 220,
-                    width: '100%',
-                    height: 'auto',
-                    borderRadius: 8,
-                    border: '1px solid #dde3ef',
-                  }}
-                />
-              </a>
-              <p style={{ color: '#8a93a8', margin: '8px 0 0', fontSize: 13 }}>
-                {photo.name} · {formatSize(photo.size)}
-              </p>
-            </div>
+          </>
           )}
 
           {/*
+            The child's photo, with the actions that apply to it.
+
+            Both documents are optional on the public form now, so a parent can
+            apply without them and the academy collects them afterwards -- which
+            means this panel has to be able to attach one, not just show it.
+          */}
+          <div className="admin-panel">
+            <h2>ბავშვის ფოტო</h2>
+
+            {photo ? (
+              <>
+                {/*
+                  Served through the admin file proxy, not from Appwrite
+                  directly: the bucket grants no public read, deliberately,
+                  because these are children's photos. A plain <img> is used
+                  rather than next/image because the proxy route is
+                  admin-authenticated and the optimiser would need its own
+                  access to fetch the source.
+                */}
+                <a href={`/api/admin/files/${photo.id}`} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/api/admin/files/${photo.id}`}
+                    alt={childName}
+                    style={{
+                      display: 'block',
+                      maxWidth: 220,
+                      width: '100%',
+                      height: 'auto',
+                      borderRadius: 8,
+                      border: '1px solid #dde3ef',
+                    }}
+                  />
+                </a>
+                <div className="admin-doc">
+                  <span className="admin-doc-info">
+                    <span className="admin-doc-name">{photo.name}</span>
+                    <span className="admin-doc-meta">{formatSize(photo.size)}</span>
+                  </span>
+                  <span className="admin-doc-actions">
+                    <form action={removeDocument}>
+                      <input type="hidden" name="which" value="photo" />
+                      <button type="submit" className="admin-btn danger small">
+                        წაშლა
+                      </button>
+                    </form>
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p className="admin-doc-missing" style={{ margin: '0 0 14px' }}>
+                ფოტო არ არის მიმაგრებული.
+              </p>
+            )}
+
+            {/* enctype is required: without it the browser url-encodes the
+                form and the action receives the filename, not the file. */}
+            <form action={uploadDocument} encType="multipart/form-data">
+              <input type="hidden" name="which" value="photo" />
+              <div className="admin-field">
+                <label htmlFor="upload-photo">
+                  {photo ? 'ფოტოს შეცვლა' : 'ფოტოს ატვირთვა'}{' '}
+                  <span className="hint">JPG, PNG, WebP ან HEIC · მაქს. 10 MB</span>
+                </label>
+                <input
+                  id="upload-photo"
+                  type="file"
+                  name="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  required
+                />
+              </div>
+              <button type="submit" className="admin-btn secondary small">
+                ატვირთვა
+              </button>
+            </form>
+          </div>
+
+          {/*
             On a registration this list is form 100 -- the only document the
-            form collects -- so it is named rather than left as "files". A
-            missing one is called out instead of shown as an empty list,
-            because the form requires it and its absence means something.
+            form collects -- so it is named rather than left as "files".
           */}
           <div className="admin-panel">
             <h2>{isRegistration ? 'ფორმა 100' : 'ფაილები'}</h2>
+
             {files.length === 0 ? (
-              <p style={{ color: isRegistration ? '#c0392b' : '#8a93a8', margin: 0 }}>
-                {isRegistration ? 'ფორმა 100 არ არის მიმაგრებული.' : 'ფაილები არ არის მიმაგრებული.'}
+              <p className="admin-doc-missing" style={{ margin: '0 0 14px' }}>
+                {isRegistration
+                  ? 'ფორმა 100 არ არის მიმაგრებული.'
+                  : 'ფაილები არ არის მიმაგრებული.'}
               </p>
             ) : (
-              <ul className="file-list">
-                {files.map((file) => (
-                  <li key={file.id}>
-                    <span>{file.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
-                    <a href={`/api/admin/files/${file.id}`} target="_blank" rel="noreferrer">
-                      {file.name}
-                    </a>
-                    <span className="file-size">{formatSize(file.size)}</span>
-                  </li>
-                ))}
-              </ul>
+              files.map((file) => (
+                <div className="admin-doc" key={file.id}>
+                  <span className="admin-doc-info">
+                    <span className="admin-doc-name">
+                      {file.mimeType === 'application/pdf' ? '📄' : '🖼️'}{' '}
+                      <a href={`/api/admin/files/${file.id}`} target="_blank" rel="noreferrer">
+                        {file.name}
+                      </a>
+                    </span>
+                    <span className="admin-doc-meta">{formatSize(file.size)}</span>
+                  </span>
+                  <span className="admin-doc-actions">
+                    <form action={removeDocument}>
+                      <input type="hidden" name="which" value="form100" />
+                      <button type="submit" className="admin-btn danger small">
+                        წაშლა
+                      </button>
+                    </form>
+                  </span>
+                </div>
+              ))
             )}
+
+            <form
+              action={uploadDocument}
+              encType="multipart/form-data"
+              style={{ marginTop: 14 }}
+            >
+              <input type="hidden" name="which" value="form100" />
+              <div className="admin-field">
+                <label htmlFor="upload-form100">
+                  {files.length > 0 ? 'ფაილის შეცვლა' : 'ფაილის ატვირთვა'}{' '}
+                  <span className="hint">PDF, JPG, PNG, WebP ან HEIC · მაქს. 10 MB</span>
+                </label>
+                <input
+                  id="upload-form100"
+                  type="file"
+                  name="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.heic"
+                  required
+                />
+              </div>
+              <button type="submit" className="admin-btn secondary small">
+                ატვირთვა
+              </button>
+            </form>
           </div>
         </div>
 
@@ -399,6 +905,16 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
           <div className="admin-panel">
             <h2>მოქმედებები</h2>
             <div className="admin-actions">
+              {/* A link, not a form: opening the editor changes nothing, it
+                  just adds ?edit=1 so the page renders the form instead. */}
+              {!isEditing && (
+                <Link
+                  href={`/admin/enquiries/${id}?edit=1`}
+                  className="admin-btn secondary"
+                >
+                  მონაცემების რედაქტირება
+                </Link>
+              )}
               <form action={toggleArchive}>
                 <button type="submit" className="admin-btn secondary">
                   {enquiry.archived ? 'არქივიდან დაბრუნება' : 'დაარქივება'}

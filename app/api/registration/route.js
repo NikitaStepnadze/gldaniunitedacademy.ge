@@ -14,8 +14,9 @@ import {
  * harder to follow. Both write to the same enquiries table, distinguished by
  * `source`.
  *
- * Always multipart -- the photo and form 100 are mandatory, so there is no
- * file-less variant worth a JSON path.
+ * Always multipart. The photo and form 100 are optional, so a submission can
+ * carry no files at all, but the form posts as multipart either way rather than
+ * switching encodings on whether a parent had a scan to hand.
  *
  * `force-dynamic` keeps this off the static path: it must run per request and
  * reads a server-only key.
@@ -111,14 +112,18 @@ export async function POST(request) {
   const photo = form.get('photo');
   const form100 = form.get('form100');
 
-  // Both are required by the form, but a crafted request can omit them, so the
-  // rule is enforced here too rather than trusted from the client.
-  if (!photo || typeof photo !== 'object' || photo.size === 0) {
-    return Response.json({ error: 'photo_required' }, { status: 400 });
-  }
-  if (!form100 || typeof form100 !== 'object' || form100.size === 0) {
-    return Response.json({ error: 'form100_required' }, { status: 400 });
-  }
+  /*
+   * Both are optional. Not every parent can attach a scan at the point of
+   * applying -- some phone the academy and a staff member fills the form in for
+   * them -- and refusing the application outright loses the enrolment over a
+   * document that can be collected later. The admin panel flags a missing one
+   * and can upload it afterwards.
+   *
+   * A file that *is* sent still has to be a valid one; that check lives in the
+   * upload helpers below.
+   */
+  const hasPhoto = photo && typeof photo === 'object' && photo.size > 0;
+  const hasForm100 = form100 && typeof form100 === 'object' && form100.size > 0;
 
   recordAttempt(ip);
 
@@ -128,10 +133,10 @@ export async function POST(request) {
   let photoId = '';
   let fileIds = [];
   try {
-    photoId = await uploadChildPhoto(photo);
+    if (hasPhoto) photoId = await uploadChildPhoto(photo);
     // Still stored in fileIds, the column the admin file list already reads. It
-    // holds exactly one id now, so its single entry *is* form 100.
-    fileIds = await uploadEnquiryFiles([form100]);
+    // holds at most one id, so its single entry *is* form 100.
+    if (hasForm100) fileIds = await uploadEnquiryFiles([form100]);
   } catch (error) {
     await deleteFiles([photoId, ...fileIds].filter(Boolean));
 
