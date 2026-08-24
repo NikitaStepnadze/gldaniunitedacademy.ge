@@ -90,7 +90,9 @@ export default async function sitemap() {
 
   const entries = await Promise.all(
     routes.map(async (route) => ({
-      url: `${SITE_URL}${route}`,
+      // <loc> must carry a path: the root route is the empty string, which
+      // would otherwise emit a bare origin and be rejected as invalid.
+      url: `${SITE_URL}${route || '/'}`,
       lastModified: await lastModifiedFor(route),
       ...(HINTS[route] ?? DEFAULT_HINT),
     }))
