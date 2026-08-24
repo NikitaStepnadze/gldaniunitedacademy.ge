@@ -1,6 +1,10 @@
 import HeroRegisterWizard from '../components/HeroRegisterWizard';
 import ThemePage from './ThemePage';
 
+export const metadata = {
+  alternates: { canonical: '/' },
+};
+
 /**
  * Cached until an admin saves a CMS change, which calls revalidatePath.
  * The number is a safety net for edits made outside the admin panel.

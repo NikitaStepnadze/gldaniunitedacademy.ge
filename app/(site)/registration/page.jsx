@@ -2,6 +2,7 @@ import RegistrationForm from '../../components/RegistrationForm';
 import ThemePage from '../ThemePage';
 
 export const metadata = {
+  alternates: { canonical: '/registration' },
   title: 'რეგისტრაცია | გლდანი იუნაითედ აკადემია',
   description:
     'შეავსეთ ჩარიცხვის განაცხადი: ბავშვისა და მშობლის მონაცემები, ფოტო და საბუთები. დაგიკავშირდებით 1–2 სამუშაო დღეში.',

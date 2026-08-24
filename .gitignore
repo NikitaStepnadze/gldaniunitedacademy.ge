@@ -12,7 +12,7 @@
 
 # secrets: .env holds the Appwrite API key. .env.example is committed.
 .env
-.env*.local
+.env.*
 !.env.example
 
 # original-resolution image masters (downscaled copies live in public/)

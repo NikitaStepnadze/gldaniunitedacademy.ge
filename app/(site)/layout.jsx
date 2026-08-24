@@ -1,9 +1,10 @@
 import { getSettingsMap } from '../../lib/appwrite/content';
 import { buildColorOverrides } from '../../lib/cms';
 import { globalScripts, globalStyles } from '../../lib/pages';
+import { SITE_URL } from '../../lib/site';
 
 export const metadata = {
-  metadataBase: new URL('https://gldaniunitedacademy.ge'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'გლდანი იუნაითედ აკადემია | საბავშვო საფეხბურთო აკადემია თბილისში',
     template: '%s | გლდანი იუნაითედ აკადემია',
