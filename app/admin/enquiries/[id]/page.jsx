@@ -152,6 +152,17 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
   const childName = `${enquiry.childFirstName} ${enquiry.childLastName}`.trim();
 
   /*
+   * What has to be typed to confirm a permanent delete. Derived once and used
+   * by both the server action and the label above the field, so the two cannot
+   * ask for and check different things.
+   *
+   * Falls back to a fixed word for the rare row that carries no name at all --
+   * otherwise clearing a name would make its row undeletable.
+   */
+  const deleteConfirmWord =
+    (isRegistration ? childName : enquiry.name).trim() || 'წაშლა';
+
+  /*
    * School hours as a range. Both ends are required by the form, so a row with
    * only one is either pre-split or hand-edited -- show whichever is there
    * rather than a dash that hides it.
@@ -331,9 +342,33 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
     redirect('/admin/enquiries');
   }
 
-  /** Removes the row and any files it owned, so nothing is orphaned. */
-  async function remove() {
+  /**
+   * Removes the row and any files it owned, so nothing is orphaned.
+   *
+   * Guarded by a typed confirmation: the deletion is permanent and takes the
+   * child's documents with it, and the button sits one click away from the
+   * archive button that does the reversible version of the same thing.
+   *
+   * The check is here rather than only in the browser because a confirm()
+   * dialog is advisory -- this action is reachable by a direct POST, and the
+   * data it destroys cannot be restored. Names are compared case-insensitively
+   * and with surrounding whitespace ignored, so a correct name is not refused
+   * over a trailing space.
+   */
+  async function remove(formData) {
     'use server';
+
+    const typed = String(formData.get('confirmName') ?? '').trim();
+
+    /*
+     * A row can legitimately have no name -- an admin edit that clears both
+     * parents' names leaves it empty -- and requiring an empty string would
+     * make such a row impossible to delete. Those fall back to a fixed word,
+     * so the action still has to be typed out deliberately.
+     */
+    if (!deleteConfirmWord || typed.toLowerCase() !== deleteConfirmWord.toLowerCase()) {
+      redirect(`/admin/enquiries/${id}?delete=mismatch`);
+    }
 
     const fileIds = await deleteEnquiry(id);
     // photoId is not part of fileIds, so it needs deleting explicitly or the
@@ -345,13 +380,19 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
 
   return (
     <main className="admin-main">
-      <Link
-        href="/admin/enquiries"
-        className="admin-btn secondary"
-        style={{ marginBottom: 18 }}
-      >
-        ← სიაში დაბრუნება
-      </Link>
+      {/*
+        * The download sits beside the back link rather than among the status
+        * controls below: it reads the application out, it does not change it.
+        * A plain <a> because the response is a file, not a route.
+        */}
+      <div className="admin-export" style={{ marginBottom: 18 }}>
+        <Link href="/admin/enquiries" className="admin-btn secondary">
+          ← სიაში დაბრუნება
+        </Link>
+        <a className="admin-btn secondary" href={`/api/admin/export/${id}`} download>
+          ⭳ ექსელში ჩამოტვირთვა
+        </a>
+      </div>
 
       {/* The child is who the application is about, so they head the page; the
           parent's name moves to the subtitle. */}
@@ -366,6 +407,11 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
       </p>
 
       {query?.saved === '1' && <p className="admin-msg ok">შენახულია.</p>}
+      {query?.delete === 'mismatch' && (
+        <p className="admin-msg error">
+          სახელი არ დაემთხვა — განაცხადი არ წაშლილა.
+        </p>
+      )}
       {Object.keys(editErrors).length > 0 && (
         <p className="admin-msg error">გთხოვთ შეასწოროთ მონიშნული ველები.</p>
       )}
@@ -784,9 +830,11 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
               </p>
             )}
 
-            {/* enctype is required: without it the browser url-encodes the
-                form and the action receives the filename, not the file. */}
-            <form action={uploadDocument} encType="multipart/form-data">
+            {/* No encType: `action` is a server action, so React serialises the
+                FormData itself rather than letting the browser submit the form,
+                and files come through regardless. Setting it makes React warn
+                that it is overriding the value. */}
+            <form action={uploadDocument}>
               <input type="hidden" name="which" value="photo" />
               <div className="admin-field">
                 <label htmlFor="upload-photo">
@@ -844,11 +892,8 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
               ))
             )}
 
-            <form
-              action={uploadDocument}
-              encType="multipart/form-data"
-              style={{ marginTop: 14 }}
-            >
+            {/* See the photo form above on the absent encType. */}
+            <form action={uploadDocument} style={{ marginTop: 14 }}>
               <input type="hidden" name="which" value="form100" />
               <div className="admin-field">
                 <label htmlFor="upload-form100">
@@ -920,10 +965,34 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
                   {enquiry.archived ? 'არქივიდან დაბრუნება' : 'დაარქივება'}
                 </button>
               </form>
-              <form action={remove}>
-                <button type="submit" className="admin-btn danger">
-                  სამუდამოდ წაშლა
-                </button>
+              {/*
+                * Deleting asks for the name to be typed first. The archive
+                * button above is the reversible action, so the destructive one
+                * should cost more than the same single click.
+                */}
+              <form action={remove} className="admin-delete">
+                <label htmlFor="confirmName">
+                  სამუდამოდ წასაშლელად აკრიფეთ:{' '}
+                  <strong>{deleteConfirmWord}</strong>
+                </label>
+                <div className="admin-delete-row">
+                  <input
+                    id="confirmName"
+                    name="confirmName"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="სახელი გვარი"
+                    aria-describedby="delete-hint"
+                  />
+                  <button type="submit" className="admin-btn danger">
+                    სამუდამოდ წაშლა
+                  </button>
+                </div>
+                <p id="delete-hint" className="admin-delete-hint">
+                  წაიშლება განაცხადიც და ატვირთული დოკუმენტებიც. დაბრუნება ვერ
+                  მოხერხდება — თუ მხოლოდ სიიდან მალვა გსურთ, გამოიყენეთ
+                  „დაარქივება“.
+                </p>
               </form>
             </div>
             <p style={{ color: '#8a93a8', fontSize: 12, marginTop: 12, marginBottom: 0 }}>

@@ -169,10 +169,21 @@ const SCHEMA = [
       { kind: 'string', key: 'value', size: 8000, required: false },
       // Which page it belongs to, so the admin UI can group fields.
       { kind: 'string', key: 'page', size: 64, required: false },
+      // Section within the page ("slide1", "coach2"), so the editor can put
+      // every field of one card together instead of listing 98 flat inputs.
+      { kind: 'string', key: 'group', size: 64, required: false },
       // Human label shown in the admin panel instead of the raw key.
       { kind: 'string', key: 'label', size: 160, required: false },
       // 'text' | 'textarea' | 'image' -- tells the admin which input to render.
       { kind: 'string', key: 'kind', size: 32, required: false, xdefault: 'text' },
+      /*
+       * Document order of the marker in the theme HTML.
+       *
+       * Without it the editor can only sort by key, which is alphabetical and
+       * so puts the footer above the hero. Sorting by this makes the panel read
+       * top-to-bottom in the same order as the page it edits.
+       */
+      { kind: 'integer', key: 'order', required: false, xdefault: 0 },
     ],
     indexes: [
       { key: 'idx_key', type: 'unique', columns: ['key'] },
@@ -388,5 +399,42 @@ if (!bucketExists) {
     })
   );
 }
+
+/*
+ * Site images share the enquiry bucket.
+ *
+ * They would rather have a bucket of their own -- one granting public read, so
+ * the CDN could serve them directly -- but Appwrite's free plan allows exactly
+ * one bucket per project, and the enquiry bucket has it.
+ *
+ * Sharing is safe only because the bucket still grants nobody anything. Both
+ * kinds of file stay unreachable by URL, and each is served by a route that
+ * decides for itself what it will hand out:
+ *
+ *   /api/admin/files/[id]  - any file in the bucket, admin session required.
+ *   /api/media/[id]        - public, but ONLY files an admin has published
+ *                            into a CMS row. See that route for the check.
+ *
+ * So an enquiry document is never public: nothing points a CMS row at it.
+ *
+ * The extension list is widened here because site images allow formats a
+ * scanned document does not (avif, gif).
+ */
+await step(`bucket "${FILES_BUCKET}" accepts site image formats`, () =>
+  storage.updateBucket({
+    bucketId: FILES_BUCKET,
+    name: 'Enquiry files & site images',
+    permissions: NO_PUBLIC_ACCESS,
+    fileSecurity: false,
+    enabled: true,
+    maximumFileSize: 10 * 1024 * 1024,
+    allowedFileExtensions: [
+      'pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'avif', 'gif',
+    ],
+    compression: 'gzip',
+    encryption: true,
+    antivirus: true,
+  })
+);
 
 console.log('\nDone.\n');

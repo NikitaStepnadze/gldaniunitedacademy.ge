@@ -12,7 +12,7 @@ import { isAuthenticated } from '../../lib/appwrite/auth';
  */
 const LINKS = [
   { href: '/admin/enquiries', label: 'განაცხადები' },
-  { href: '/admin/content', label: 'ტექსტები' },
+  { href: '/admin/content', label: 'ტექსტები და ფოტოები' },
   { href: '/admin/design', label: 'ფერები' },
 ];
 
@@ -31,11 +31,28 @@ export default async function AdminShell({ children }) {
               </Link>
             ))}
           </nav>
-          <form action="/api/admin/logout" method="post">
-            <button type="submit" className="admin-btn secondary">
-              გასვლა
-            </button>
-          </form>
+          <div className="admin-bar-actions">
+            {/*
+              A plain <a>, not next/link: this leaves the admin tree for the
+              public site, which has its own root layout and its own stylesheets.
+              A client-side navigation between the two swaps the React tree
+              without reloading the document, so the public page would render
+              without the theme's <head>.
+            */}
+            <a
+              className="admin-btn secondary"
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              საიტის ნახვა
+            </a>
+            <form action="/api/admin/logout" method="post">
+              <button type="submit" className="admin-btn secondary">
+                გასვლა
+              </button>
+            </form>
+          </div>
         </header>
       )}
       {children}

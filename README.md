@@ -144,6 +144,53 @@ with the original English template.
 To migrate a page to real components, replace its `app/<route>/page.jsx` with
 ordinary JSX — pages can be converted one at a time, since each is independent.
 
+### The admin editor (`/admin/content`)
+
+An admin edits text and photos at `/admin/content`, with a live preview of the
+real page beside the fields. Typing updates the preview immediately; nothing
+reaches the public site until Save.
+
+**How a field becomes editable.** The theme HTML is the source of truth for
+*which* fields exist. An element opts in by carrying a marker:
+
+```html
+<h1 class="flat-title-slider" data-cms="home.slide1.title">ფეხბურთი იწყება</h1>
+<img data-cms-img="home.slide1.image" src="/gua_hero.jpg" alt="...">
+```
+
+`data-cms` makes an element's text editable; `data-cms-img` makes an `<img>`'s
+`src` editable. After adding or changing markers, run:
+
+```bash
+npm run appwrite:sync-cms          # create rows for new markers
+npm run appwrite:sync-cms -- --prune   # also delete rows whose marker is gone
+```
+
+That reads the markers out of `content/pages/*.html` and creates one row per
+key, so the database can never drift from the markup. Rows are created **empty
+on purpose**: an empty value means "use whatever the theme already says", so
+seeding never duplicates the Georgian copy, and clearing a field in the admin
+restores the original. Keys are numbered per occurrence (`slide1`, `slide2`,
+`coach3`) so repeated components stay independently editable.
+
+**Photos.** Uploads go to Appwrite storage and are referenced as
+`/api/media/<id>`.
+
+> Site images share the `enquiry-files` bucket, because the free Appwrite plan
+> allows exactly **one bucket per project**. That is only safe because the
+> bucket grants nobody any permission and the two kinds are served by different
+> routes: `/api/admin/files/[id]` requires an admin session, while the public
+> `/api/media/[id]` serves a file **only** if its name carries the `site__`
+> prefix that `uploadSiteImage` adds. An enquiry attachment therefore 404s on
+> the public route. That check in `app/api/media/[id]/route.js` is a security
+> boundary, not a detail — these are children's documents.
+
+**The preview.** `/admin-preview/<route>` renders the real page with the real
+theme assets and applies the editor's draft over `postMessage`. It lives in its
+own route group (`app/(preview)/`) so it gets its own `<html>`; nested under the
+admin layout it produced two documents and the admin stylesheet leaked in. It
+404s without an admin session and is never indexed.
+
 ### Placeholders to replace
 
 Contact details are now real. Phone, email and address appear in the header,

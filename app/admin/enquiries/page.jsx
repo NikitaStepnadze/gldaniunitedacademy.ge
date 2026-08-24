@@ -33,6 +33,16 @@ export default async function EnquiriesPage({ searchParams }) {
     STATUSES.map((s) => [s, all.filter((r) => r.status === s).length])
   );
 
+  /*
+   * The export URL mirrors the filter state exactly, so "download what I am
+   * looking at" needs no second set of controls to keep in sync.
+   */
+  const exportParams = new URLSearchParams();
+  if (status) exportParams.set('status', status);
+  if (archived) exportParams.set('archived', '1');
+  const exportQuery = exportParams.toString();
+  const exportHref = `/api/admin/export${exportQuery ? `?${exportQuery}` : ''}`;
+
   const base = archived ? '/admin/enquiries?archived=1' : '/admin/enquiries';
   const link = (s) =>
     s
@@ -47,6 +57,22 @@ export default async function EnquiriesPage({ searchParams }) {
       <p className="admin-subtitle">
         {all.length} განაცხადი{status ? ` · ფილტრი: ${STATUS_LABELS[status]}` : ''}
       </p>
+
+      {/*
+        * Export links, as plain <a> rather than next/link: the response is a
+        * file download, not a page, so a client-side navigation would try to
+        * render the CSV as a route. The first link carries the current filter
+        * so the file matches what is on screen; the second ignores it and
+        * takes everything, archive included.
+        */}
+      <div className="admin-export">
+        <a className="admin-btn secondary small" href={exportHref} download>
+          ⭳ სიის ჩამოტვირთვა{status || archived ? ' (ფილტრით)' : ''}
+        </a>
+        <a className="admin-btn secondary small" href="/api/admin/export?all=1" download>
+          ⭳ ყველა (არქივთან ერთად)
+        </a>
+      </div>
 
       <div className="admin-filters">
         <Link href={link()} aria-current={!status ? 'page' : undefined}>
@@ -87,6 +113,9 @@ export default async function EnquiriesPage({ searchParams }) {
                   <th>სტატუსი</th>
                   <th>ფაილები</th>
                   <th>თარიღი</th>
+                  {/* Per-application download; the header is blank because
+                      the icons below label themselves. */}
+                  <th aria-label="ჩამოტვირთვა" />
                 </tr>
               </thead>
               <tbody>
@@ -118,6 +147,16 @@ export default async function EnquiriesPage({ searchParams }) {
                     <td>{row.fileIds?.length ? `${row.fileIds.length} 📎` : '—'}</td>
                     <td style={{ whiteSpace: 'nowrap', color: '#8a93a8' }}>
                       {formatDate(row.$createdAt)}
+                    </td>
+                    <td>
+                      <a
+                        className="admin-row-download"
+                        href={`/api/admin/export/${row.$id}`}
+                        download
+                        title="ამ განაცხადის ჩამოტვირთვა"
+                      >
+                        ⭳
+                      </a>
                     </td>
                   </tr>
                   );
