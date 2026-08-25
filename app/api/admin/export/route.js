@@ -1,5 +1,12 @@
 import { isAuthenticated } from '../../../../lib/appwrite/auth';
-import { listEnquiries, STATUSES, STATUS_LABELS } from '../../../../lib/appwrite/enquiries';
+import {
+  DEFAULT_SORT,
+  listEnquiries,
+  SORTS,
+  SOURCES,
+  STATUSES,
+  STATUS_LABELS,
+} from '../../../../lib/appwrite/enquiries';
 import { buildEnquiriesWorkbook, safeFilename, XLSX_CONTENT_TYPE } from '../../../../lib/export';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +31,21 @@ export async function GET(request) {
   const archived = searchParams.get('archived') === '1';
 
   /*
+   * The search, type filter and sort the admin had on screen.
+   *
+   * Carried through so "download the list" keeps meaning "download what I am
+   * looking at" now that the list can be searched. Without these the button
+   * silently exported every row of the status instead of the handful the
+   * admin had filtered down to -- which is the opposite of what a filtered
+   * export is for, and easy not to notice until the wrong file is sent on.
+   */
+  const search = (searchParams.get('q') ?? '').trim();
+  const sourceParam = searchParams.get('source');
+  const source = SOURCES.includes(sourceParam) ? sourceParam : undefined;
+  const sortParam = searchParams.get('sort');
+  const sort = SORTS[sortParam] ? sortParam : DEFAULT_SORT;
+
+  /*
    * The limit is well above any plausible number of applications for a single
    * academy and is here so a runaway read cannot hang the request. If it is
    * ever reached the export would truncate silently, so it is logged.
@@ -32,13 +54,15 @@ export async function GET(request) {
 
   let rows;
   if (exportAll) {
+    // `?all=1` is the backup button and deliberately ignores every filter,
+    // search included.
     const [live, archive] = await Promise.all([
       listEnquiries({ archived: false, limit: LIMIT }),
       listEnquiries({ archived: true, limit: LIMIT }),
     ]);
     rows = [...live, ...archive];
   } else {
-    rows = await listEnquiries({ status, archived, limit: LIMIT });
+    rows = await listEnquiries({ status, archived, limit: LIMIT, search, sort, source });
   }
 
   if (rows.length >= LIMIT) {

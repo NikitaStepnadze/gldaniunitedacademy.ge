@@ -76,16 +76,34 @@ export default function ImageField({ id, value, onChange, onFocus }) {
   }
 
   return (
-    <div className="image-field" onFocus={onFocus}>
+    /*
+     * `onClick` as well as `onFocus`.
+     *
+     * onFocus alone only fires when a focusable child receives focus, and the
+     * only focusable children here are the file input -- which is `hidden`,
+     * so it never takes focus -- and the three buttons, which do something
+     * else when clicked. That left a photo field with no way to say "show me
+     * this one in the preview": clicking the thumbnail did nothing, and the
+     * admin could not find the component they were editing.
+     *
+     * Clicking anywhere in the field now locates it, which is the same gesture
+     * that already works for a text field.
+     */
+    <div className="image-field" onFocus={onFocus} onClick={onFocus}>
       <div className="image-field-main">
-        <div className="image-thumb">
+        <button
+          type="button"
+          className="image-thumb"
+          onClick={onFocus}
+          title="გვერდზე ჩვენება"
+        >
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="" />
           ) : (
             <span className="image-thumb-empty">საწყისი სურათი</span>
           )}
-        </div>
+        </button>
 
         <div className="image-field-controls">
           <input

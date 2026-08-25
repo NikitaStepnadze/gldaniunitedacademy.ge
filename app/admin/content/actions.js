@@ -1,13 +1,8 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
-
 import { isAuthenticated } from '../../../lib/appwrite/auth';
-import {
-  CMS_TAG,
-  contentTableId,
-  updateValues,
-} from '../../../lib/appwrite/content';
+import { contentTableId, updateValues } from '../../../lib/appwrite/content';
+import { revalidateSite } from '../../../lib/revalidate';
 
 /**
  * Saves the editor's changed fields.
@@ -44,20 +39,24 @@ export async function saveContent(changes) {
   }
 
   /*
-   * Drops the cached CMS reads so the public pages pick the edit up on their
-   * next request.
-   *
-   * Both calls are needed. revalidateTag clears the content map itself, but
-   * each public page also carries `export const revalidate = 3600`, so its own
-   * rendered output would stay in the full route cache for up to an hour and
-   * keep serving the old copy from a cache that never re-reads the tag.
+   * Drops every cache holding CMS content so the public pages pick the edit up
+   * on the next request rather than up to an hour later. See revalidateSite
+   * for why clearing the tag alone was not enough -- that was the bug where a
+   * save showed correctly in the preview but not on the real site.
    */
-  revalidateTag(CMS_TAG);
-  revalidatePath('/', 'layout');
+  const fullyRevalidated = revalidateSite();
 
   return {
     ok: true,
     saved: updates.length,
-    message: `${updates.length} ცვლილება შენახულია.`,
+    /*
+     * The message distinguishes the two outcomes, because they need different
+     * things from the admin. A clean save is finished. A partial revalidation
+     * means the edit *is* stored and will appear within the hour -- so the
+     * honest message says saved, and warns rather than claiming failure.
+     */
+    message: fullyRevalidated
+      ? `${updates.length} ცვლილება შენახულია.`
+      : `${updates.length} ცვლილება შენახულია, თუმცა საიტის განახლება დაგვიანდება.`,
   };
 }

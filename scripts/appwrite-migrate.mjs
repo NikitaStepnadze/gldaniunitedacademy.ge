@@ -288,6 +288,10 @@ const SCHEMA = [
       // Ids of files in the enquiry-files bucket, attached by the parent.
       { kind: 'string', key: 'fileIds', size: 64, required: false, array: true },
       { kind: 'boolean', key: 'archived', required: false, xdefault: false },
+      // Whether an admin has opened this enquiry. Drives the colour of the row
+      // in the admin list, so a newly arrived application is visible at a
+      // glance. Defaults to false so every existing row reads as unopened.
+      { kind: 'boolean', key: 'seen', required: false, xdefault: false },
     ],
     indexes: [
       { key: 'idx_email', type: 'key', columns: ['email'] },

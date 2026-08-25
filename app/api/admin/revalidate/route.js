@@ -1,7 +1,5 @@
-import { revalidateTag } from 'next/cache';
-
 import { isAuthenticated } from '../../../../lib/appwrite/auth';
-import { CMS_TAG } from '../../../../lib/appwrite/content';
+import { PUBLIC_ROUTES, revalidateSite } from '../../../../lib/revalidate';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +16,6 @@ export async function POST() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  revalidateTag(CMS_TAG);
-  return Response.json({ ok: true, revalidated: CMS_TAG });
+  const ok = revalidateSite();
+  return Response.json({ ok, revalidated: PUBLIC_ROUTES });
 }

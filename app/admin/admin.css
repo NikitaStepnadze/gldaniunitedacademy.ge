@@ -922,6 +922,8 @@
   min-width: 0;
 }
 
+/* A <button>, so clicking the photo scrolls the preview to it the way a text
+   field does when focused. Reset so it still looks like the plain box it was. */
 .image-thumb {
   flex: 0 0 120px;
   width: 120px;
@@ -932,6 +934,19 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f0f3f9;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.image-thumb:hover {
+  border-color: var(--gold);
+}
+
+.image-thumb:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .image-thumb img {
@@ -1136,4 +1151,244 @@
   font-size: 12px;
   color: var(--ink-faint);
   line-height: 1.5;
+}
+
+/* ---- New vs. seen enquiries ----
+   A newly arrived application is tinted until an admin opens it, so it is
+   obvious in a long list which ones nobody has looked at yet.
+
+   The tint goes on the cells rather than the row because `.admin-table td`
+   already paints a background on hover; a background on <tr> would sit behind
+   those cells and never show. These rules come after that hover rule so they
+   win, and each restates its own hover shade -- otherwise hovering a tinted
+   row would wash it grey and lose the signal exactly when the reader is
+   pointing at it.
+
+   The greens and yellows are the same family as the status pills above, one
+   step paler so the pill still reads clearly on top of the row. */
+.admin-table tr.row-new td {
+  background: #fffdf2;
+}
+
+.admin-table tr.row-new:hover td {
+  background: #fff9e0;
+}
+
+/* The applicant's name carries the weight, so an unread row reads as unread
+   from the name alone -- colour is not the only cue, which matters for anyone
+   who cannot easily distinguish these two tints. */
+.admin-table tr.row-new td:first-child a {
+  font-weight: 700;
+}
+
+.admin-table tr.row-seen td {
+  background: #fbfefb;
+}
+
+.admin-table tr.row-seen:hover td {
+  background: #f2faf3;
+}
+
+/* ---- Applications toolbar: search, type filter, sort ----------------------
+ *
+ * Sits between the status tabs and the table. One row on a wide screen, and
+ * it wraps to stacked blocks on narrow ones -- the search box is given
+ * `flex: 1` with a min-width so it takes the slack rather than the selects
+ * stretching, which is what makes the row read as "search, then refine".
+ */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-search {
+  position: relative;
+  flex: 1 1 320px;
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-search input {
+  width: 100%;
+  /* Room for the icon on the left and the clear button on the right, so
+     neither ever overlaps the text the admin is typing. */
+  padding: 9px 36px 9px 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.admin-search input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, .18);
+}
+
+/* The browser's own clear affordance is removed: it renders at a different
+   size in each engine and would sit next to ours. */
+.admin-search input::-webkit-search-decoration,
+.admin-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 13px;
+  color: var(--ink-faint);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.admin-search-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.admin-search-clear:hover {
+  background: var(--ink);
+  color: #fff;
+}
+
+.admin-toolbar-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.admin-select select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-select select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* The result count. `flex-basis: 100%` drops it onto its own line so it reads
+   as a summary of the row above rather than another control in it. */
+.admin-result-count {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Reserves the line's height so the row does not jump as the text changes
+     between "სულ N" and "ნაპოვნია N / M". */
+  min-height: 20px;
+  transition: opacity .15s ease;
+}
+
+/* Dimmed while a navigation is in flight, so a slow query looks busy rather
+   than broken. The count itself stays readable. */
+.admin-result-count[data-pending='1'] {
+  opacity: .5;
+}
+
+.admin-result-count strong {
+  color: var(--ink);
+}
+
+.admin-clear-filters {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--gold);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-clear-filters:hover {
+  color: var(--ink);
+}
+
+/* ---- Sortable column headings ----
+ *
+ * The button fills the cell so the whole heading is the target, not just the
+ * few pixels of text.
+ */
+.admin-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.admin-sort-btn:hover {
+  color: var(--ink);
+}
+
+/* Held at a fixed width so the heading does not shift as the glyph changes
+   between the neutral and the active arrows. */
+.admin-sort-arrow {
+  display: inline-block;
+  width: 10px;
+  font-size: 9px;
+  color: var(--ink-faint);
+  opacity: .55;
+}
+
+.admin-sort-arrow.active {
+  color: var(--gold);
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .admin-toolbar-controls {
+    width: 100%;
+  }
+
+  .admin-select {
+    flex: 1;
+  }
+
+  .admin-select select {
+    width: 100%;
+  }
 }

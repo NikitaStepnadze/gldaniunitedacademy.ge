@@ -6,6 +6,7 @@ import { isAuthenticated } from '../../../../lib/appwrite/auth';
 import {
   deleteEnquiry,
   getEnquiry,
+  markEnquirySeen,
   setEnquiryFiles,
   STATUSES,
   STATUS_LABELS,
@@ -119,6 +120,21 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
       </main>
     );
   }
+
+  /*
+   * Opening the page is what marks the application as seen, so the list can
+   * colour the ones nobody has looked at yet.
+   *
+   * Fired after the read above, and the already-fetched `enquiry` is what the
+   * page renders, so this never changes what the reader sees on the visit that
+   * set it. It is also skipped when the flag is already set, to avoid a write
+   * on every revisit.
+   *
+   * Not awaited before rendering matters little either way -- it is awaited so
+   * the write cannot be cut short when the response finishes, which on a
+   * serverless host can kill work still in flight.
+   */
+  if (!enquiry.seen) await markEnquirySeen(id);
 
   const files = await getFilesMeta(enquiry.fileIds ?? []);
 

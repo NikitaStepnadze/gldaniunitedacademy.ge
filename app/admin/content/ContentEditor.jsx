@@ -150,7 +150,31 @@ export default function ContentEditor({ rows }) {
     function onMessage(event) {
       if (event.origin !== window.location.origin) return;
       if (event.data?.source !== 'gua-preview') return;
-      if (event.data.type === 'ready') setReadyRoute(event.data.route ?? null);
+
+      if (event.data.type === 'ready') {
+        setReadyRoute(event.data.route ?? null);
+
+        /*
+         * Answer the announcement from inside the handler.
+         *
+         * This is what lets the frame stop announcing, and it is sent from
+         * here specifically because arriving here is the only proof that this
+         * listener is attached and has seen the message. The frame used to
+         * treat the 'draft' posted by the iframe's onLoad as its
+         * acknowledgement, but that fires independently of this effect -- and
+         * when the frame won the race, the frame stopped announcing while this
+         * component had never received a 'ready'. The preview then sat behind
+         * its loading overlay with no way out.
+         *
+         * Posted straight back at the source window rather than through
+         * `post`, because the ref may not point at this frame yet on the very
+         * first message.
+         */
+        event.source?.postMessage(
+          { source: 'gua-admin', type: 'ready-ack' },
+          window.location.origin
+        );
+      }
     }
 
     window.addEventListener('message', onMessage);

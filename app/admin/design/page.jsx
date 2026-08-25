@@ -1,13 +1,12 @@
 import { redirect } from 'next/navigation';
-import { revalidateTag } from 'next/cache';
 
 import { isAuthenticated } from '../../../lib/appwrite/auth';
 import {
-  CMS_TAG,
   listSettingRows,
   settingsTableId,
   updateValues,
 } from '../../../lib/appwrite/content';
+import { revalidateSite } from '../../../lib/revalidate';
 
 import ColorField from './ColorField';
 
@@ -62,7 +61,9 @@ export default async function DesignPage({ searchParams }) {
 
     if (updates.length > 0) {
       await updateValues(settingsTableId, updates);
-      revalidateTag(CMS_TAG);
+      // Same reasoning as the content editor: the tag alone leaves the pages'
+      // own cached HTML in place, so a palette change did not reach the site.
+      revalidateSite();
     }
 
     const params = new URLSearchParams({ saved: String(updates.length) });
