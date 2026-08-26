@@ -1046,6 +1046,80 @@
 }
 
 /* --- consent ----------------------------------------------------------- */
+/* --- wizard training plan --- */
+
+/* Stacked rather than side by side: the card is narrow and sits over a
+   photograph, so two columns would wrap the labels mid-word. */
+.hero-wizard-plans {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0 0 12px;
+	padding: 0;
+	border: 0;
+}
+
+.hero-wizard-plans > .hero-wizard-label {
+	margin-bottom: 2px;
+	padding: 0;
+}
+
+.hero-wizard-plan {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 10px;
+	align-items: start;
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, .28);
+	border-radius: 8px;
+	background-color: rgba(255, 255, 255, .07);
+	cursor: pointer;
+	transition: border-color .15s ease, background-color .15s ease;
+}
+
+.hero-wizard-plan:hover {
+	border-color: var(--gold, #c9a227);
+}
+
+.hero-wizard-plan input[type="radio"] {
+	width: 16px;
+	height: 16px;
+	margin: 2px 0 0;
+	accent-color: var(--gold, #c9a227);
+	cursor: pointer;
+}
+
+.hero-wizard-plan:has(input:checked) {
+	border-color: var(--gold, #c9a227);
+	background-color: rgba(201, 162, 39, .18);
+}
+
+.hero-wizard-plan:has(input:focus-visible) {
+	outline: 2px solid var(--gold, #c9a227);
+	outline-offset: 2px;
+}
+
+.hero-wizard-plan-body {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+.hero-wizard-plan-title {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 18px;
+	color: #fff;
+}
+
+.hero-wizard-plan-note {
+	font-size: 12px;
+	line-height: 16px;
+	color: rgba(255, 255, 255, .75);
+}
+
 .hero-wizard-consent {
 	display: grid;
 	grid-template-columns: auto 1fr;
@@ -1941,6 +2015,76 @@ a.hero-register-submit {
 	line-height: 20px;
 	color: var(--navy, #16244f);
 	word-break: break-word;
+}
+
+/* --- training plan ------------------------------------------------------- */
+
+/* Two selectable cards. A radio group rather than a select: there are only
+   two options, one of them a full sentence, and a select would hide the
+   choice behind a tap and truncate the longer label. */
+.registration-plans {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px;
+	margin-bottom: 6px;
+}
+
+.registration-plan {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 12px;
+	align-items: start;
+	margin: 0;
+	padding: 16px;
+	border: 1px solid var(--line, #dde3ef);
+	border-radius: 10px;
+	background-color: #fff;
+	cursor: pointer;
+	transition: border-color .15s ease, background-color .15s ease;
+}
+
+.registration-plan:hover {
+	border-color: var(--gold, #c9a227);
+}
+
+.registration-plan input[type="radio"] {
+	width: 18px;
+	height: 18px;
+	margin: 2px 0 0;
+	accent-color: var(--gold-dark, #a5821c);
+	cursor: pointer;
+}
+
+/* :has lets the whole card react to its own radio. Browsers without it still
+   get a working, if plainer, control -- the radio itself is always visible. */
+.registration-plan:has(input:checked) {
+	border-color: var(--gold-dark, #a5821c);
+	background-color: #fdfaf0;
+}
+
+.registration-plan:has(input:focus-visible) {
+	outline: 2px solid var(--gold-dark, #a5821c);
+	outline-offset: 2px;
+}
+
+.registration-plan-body {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+
+.registration-plan-title {
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 22px;
+	color: var(--navy, #16244f);
+}
+
+.registration-plan-note {
+	font-size: 13px;
+	line-height: 19px;
+	color: var(--secondary, #4a5570);
 }
 
 /* --- consent, submit, status --------------------------------------------- */

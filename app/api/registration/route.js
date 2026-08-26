@@ -88,6 +88,7 @@ export async function POST(request) {
     address: form.get('address'),
     schoolFrom: form.get('schoolFrom'),
     schoolTo: form.get('schoolTo'),
+    trainingPlan: form.get('trainingPlan'),
     motherFirstName: form.get('motherFirstName'),
     motherLastName: form.get('motherLastName'),
     motherIdNumber: form.get('motherIdNumber'),

@@ -21,7 +21,14 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 /** How long to wait after the last keystroke before navigating, in ms. */
 const SEARCH_DELAY = 300;
 
-export default function EnquiryToolbar({ sorts, sources, sourceLabels, total, shown }) {
+export default function EnquiryToolbar({
+  sorts,
+  sources,
+  sourceLabels,
+  plans,
+  total,
+  shown,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -84,7 +91,8 @@ export default function EnquiryToolbar({ sorts, sources, sourceLabels, total, sh
 
   const activeSort = searchParams.get('sort') ?? 'newest';
   const activeSource = searchParams.get('source') ?? '';
-  const filtered = urlSearch !== '' || activeSource !== '';
+  const activePlan = searchParams.get('plan') ?? '';
+  const filtered = urlSearch !== '' || activeSource !== '' || activePlan !== '';
 
   return (
     <div className="admin-toolbar">
@@ -140,6 +148,21 @@ export default function EnquiryToolbar({ sorts, sources, sourceLabels, total, sh
         </label>
 
         <label className="admin-select">
+          <span>გეგმა</span>
+          <select
+            value={activePlan}
+            onChange={(event) => apply({ plan: event.target.value })}
+          >
+            <option value="">ყველა</option>
+            {Object.entries(plans ?? {}).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="admin-select">
           <span>დალაგება</span>
           <select
             value={activeSort}
@@ -173,7 +196,7 @@ export default function EnquiryToolbar({ sorts, sources, sourceLabels, total, sh
             <button
               type="button"
               className="admin-clear-filters"
-              onClick={() => apply({ q: '', source: '' })}
+              onClick={() => apply({ q: '', source: '', plan: '' })}
             >
               ფილტრის მოხსნა
             </button>

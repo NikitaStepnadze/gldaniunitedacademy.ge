@@ -6,6 +6,7 @@ import {
   SOURCES,
   STATUSES,
   STATUS_LABELS,
+  TRAINING_PLAN_KEYS,
 } from '../../../../lib/appwrite/enquiries';
 import { buildEnquiriesWorkbook, safeFilename, XLSX_CONTENT_TYPE } from '../../../../lib/export';
 
@@ -42,6 +43,8 @@ export async function GET(request) {
   const search = (searchParams.get('q') ?? '').trim();
   const sourceParam = searchParams.get('source');
   const source = SOURCES.includes(sourceParam) ? sourceParam : undefined;
+  const planParam = searchParams.get('plan');
+  const plan = TRAINING_PLAN_KEYS.includes(planParam) ? planParam : undefined;
   const sortParam = searchParams.get('sort');
   const sort = SORTS[sortParam] ? sortParam : DEFAULT_SORT;
 
@@ -62,7 +65,7 @@ export async function GET(request) {
     ]);
     rows = [...live, ...archive];
   } else {
-    rows = await listEnquiries({ status, archived, limit: LIMIT, search, sort, source });
+    rows = await listEnquiries({ status, archived, limit: LIMIT, search, sort, source, plan });
   }
 
   if (rows.length >= LIMIT) {

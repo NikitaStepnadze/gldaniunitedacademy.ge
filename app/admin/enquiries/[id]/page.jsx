@@ -10,6 +10,8 @@ import {
   setEnquiryFiles,
   STATUSES,
   STATUS_LABELS,
+  TRAINING_PLANS,
+  trainingPlanLabel,
   updateEnquiry,
   updateEnquiryDetails,
   validateEnquiryEdit,
@@ -63,6 +65,7 @@ const EDIT_ERRORS = {
   fatherPhone: { invalid: 'ნომერი არასწორია' },
   email: { invalid: 'ელფოსტა არასწორია' },
   phone: { invalid: 'ნომერი არასწორია' },
+  trainingPlan: { invalid: 'აირჩიეთ ვარჯიშის გეგმა' },
 };
 
 /** Messages for a rejected upload, keyed by the helper's error code. */
@@ -507,6 +510,33 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
                           errors={editErrors}
                         />
                       </div>
+
+                      {/*
+                        * A select rather than the radio cards the public form
+                        * uses: this is a dense edit form, and it needs a
+                        * "not set" option the public form must not offer, for
+                        * rows submitted before the choice existed.
+                        */}
+                      <div className="admin-field">
+                        <label htmlFor="edit-trainingPlan">ვარჯიშის გეგმა</label>
+                        <select
+                          id="edit-trainingPlan"
+                          name="trainingPlan"
+                          defaultValue={enquiry.trainingPlan || ''}
+                        >
+                          <option value="">— არ არის მითითებული —</option>
+                          {Object.entries(TRAINING_PLANS).map(([key, plan]) => (
+                            <option key={key} value={key}>
+                              {plan.label}
+                            </option>
+                          ))}
+                        </select>
+                        {editErrors?.trainingPlan && (
+                          <span className="admin-error">
+                            {EDIT_ERRORS.trainingPlan?.invalid ?? 'მნიშვნელობა არასწორია'}
+                          </span>
+                        )}
+                      </div>
                     </fieldset>
 
                     <fieldset className="admin-fieldset">
@@ -696,6 +726,13 @@ export default async function EnquiryDetailPage({ params, searchParams }) {
                   <div>
                     <dt>სკოლის საათები</dt>
                     <dd>{schoolHours}</dd>
+                  </div>
+                  {/* Rendered from the key through trainingPlanLabel, so a
+                      change to the price or the wording shows on every existing
+                      application rather than only on new ones. */}
+                  <div>
+                    <dt>ვარჯიშის გეგმა</dt>
+                    <dd>{trainingPlanLabel(enquiry.trainingPlan)}</dd>
                   </div>
                 </>
               )}

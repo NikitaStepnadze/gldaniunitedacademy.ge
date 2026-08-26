@@ -10,6 +10,8 @@ import {
   SOURCES,
   STATUSES,
   STATUS_LABELS,
+  TRAINING_PLAN_KEYS,
+  TRAINING_PLANS,
 } from '../../../lib/appwrite/enquiries';
 
 import EnquiryToolbar from './EnquiryToolbar';
@@ -42,11 +44,12 @@ export default async function EnquiriesPage({ searchParams }) {
   const archived = params?.archived === '1';
   const search = typeof params?.q === 'string' ? params.q.trim() : '';
   const source = SOURCES.includes(params?.source) ? params.source : undefined;
+  const plan = TRAINING_PLAN_KEYS.includes(params?.plan) ? params.plan : undefined;
   // Falls back rather than 404s: a stale bookmark naming a sort that no longer
   // exists should still open the list.
   const sort = SORTS[params?.sort] ? params.sort : DEFAULT_SORT;
 
-  const rows = await listEnquiries({ status, archived, search, sort, source });
+  const rows = await listEnquiries({ status, archived, search, sort, source, plan });
 
   /*
    * Counts come from the unfiltered set so the status tabs keep showing what is
@@ -68,6 +71,7 @@ export default async function EnquiriesPage({ searchParams }) {
   if (archived) exportParams.set('archived', '1');
   if (search) exportParams.set('q', search);
   if (source) exportParams.set('source', source);
+  if (plan) exportParams.set('plan', plan);
   if (sort !== DEFAULT_SORT) exportParams.set('sort', sort);
   const exportQuery = exportParams.toString();
   const exportHref = `/api/admin/export${exportQuery ? `?${exportQuery}` : ''}`;
@@ -85,6 +89,7 @@ export default async function EnquiriesPage({ searchParams }) {
     if (nextStatus) query.set('status', nextStatus);
     if (search) query.set('q', search);
     if (source) query.set('source', source);
+    if (plan) query.set('plan', plan);
     if (sort !== DEFAULT_SORT) query.set('sort', sort);
     const qs = query.toString();
     return `/admin/enquiries${qs ? `?${qs}` : ''}`;
@@ -97,12 +102,13 @@ export default async function EnquiriesPage({ searchParams }) {
     if (status) query.set('status', status);
     if (search) query.set('q', search);
     if (source) query.set('source', source);
+    if (plan) query.set('plan', plan);
     if (sort !== DEFAULT_SORT) query.set('sort', sort);
     const qs = query.toString();
     return `/admin/enquiries${qs ? `?${qs}` : ''}`;
   }
 
-  const filtering = search !== '' || source !== undefined;
+  const filtering = search !== '' || source !== undefined || plan !== undefined;
 
   return (
     <main className="admin-main">
@@ -159,6 +165,11 @@ export default async function EnquiriesPage({ searchParams }) {
         sorts={SORT_OPTIONS}
         sources={SOURCES}
         sourceLabels={SOURCE_LABELS}
+        // The short labels, not the full sentences: this is a dropdown in a
+        // toolbar, and the extended plan's full label is a line of prose.
+        plans={Object.fromEntries(
+          Object.entries(TRAINING_PLANS).map(([key, p]) => [key, p.short])
+        )}
         total={all.length}
         shown={rows.length}
       />
@@ -180,6 +191,7 @@ export default async function EnquiriesPage({ searchParams }) {
                   <SortableHeader label="ბავშვი / მშობელი" asc="nameAsc" desc="nameDesc" />
                   <th>ტელეფონი</th>
                   <SortableHeader label="ასაკი" asc="ageAsc" desc="ageDesc" />
+                  <th>გეგმა</th>
                   <th>სტატუსი</th>
                   <th>ფაილები</th>
                   <SortableHeader label="თარიღი" asc="oldest" desc="newest" />
@@ -218,6 +230,14 @@ export default async function EnquiriesPage({ searchParams }) {
                     </td>
                     <td>{row.phone}</td>
                     <td>{row.childAge || '—'}</td>
+                    {/* The short label, with the full one on hover -- the
+                        extended plan's real label is too long for a cell. */}
+                    <td
+                      className="admin-plan-cell"
+                      title={TRAINING_PLANS[row.trainingPlan]?.label ?? undefined}
+                    >
+                      {TRAINING_PLANS[row.trainingPlan]?.short ?? '—'}
+                    </td>
                     <td>
                       <span className={`pill ${row.status}`}>
                         {STATUS_LABELS[row.status] ?? row.status}

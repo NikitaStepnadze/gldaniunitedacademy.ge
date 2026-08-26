@@ -89,6 +89,10 @@ const FIELD_MESSAGES = {
     type: 'დაშვებულია PDF, JPG, PNG, WebP და HEIC',
     size: 'ფაილი აღემატება 10 MB-ს',
   },
+  trainingPlan: {
+    required: 'აირჩიეთ ვარჯიშის გეგმა',
+    invalid: 'აირჩიეთ ვარჯიშის გეგმა',
+  },
   consent: { required: 'გთხოვთ დაეთანხმოთ მონაცემთა დამუშავებას' },
 };
 
@@ -231,6 +235,18 @@ export default function RegistrationForm() {
 
     function valueOf(name) {
       return field(name)?.value.trim() ?? '';
+    }
+
+    /**
+     * The selected value of a radio group, or '' when none is chosen.
+     *
+     * `field()` returns the first element with the name, which for a radio
+     * group is the first *option* rather than the group's answer -- reading its
+     * `.value` reports 'standard' even when nothing has been clicked. The
+     * `:checked` selector asks the question that was actually meant.
+     */
+    function checkedValue(name) {
+      return form.querySelector(`[name="${name}"]:checked`)?.value ?? '';
     }
 
     function errorSlot(name) {
@@ -421,6 +437,13 @@ export default function RegistrationForm() {
       validateFile('photo', PHOTO_TYPES, bad);
       validateFile('form100', DOC_TYPES, bad);
 
+      // A radio group, so `field()` -- which returns the first match -- cannot
+      // answer "was anything chosen?". The group has to be read as a whole.
+      if (!checkedValue('trainingPlan')) {
+        setError('trainingPlan', 'required');
+        bad.push('trainingPlan');
+      }
+
       if (!field('consent')?.checked) {
         setError('consent', 'required');
         bad.push('consent');
@@ -455,6 +478,10 @@ export default function RegistrationForm() {
       for (const name of TEXT_FIELDS) {
         body.set(name, field(name)?.value ?? '');
       }
+      // Set from the group's checked option, not from TEXT_FIELDS: `field()`
+      // would hand back the first radio and post 'standard' regardless of what
+      // the parent picked.
+      body.set('trainingPlan', checkedValue('trainingPlan'));
       body.set('website', honeypot.value);
       // Appended only when chosen: setting an absent file would post the string
       // "undefined" as the field's value, which the route would read as a file
@@ -537,6 +564,16 @@ export default function RegistrationForm() {
     textInputs.forEach((input) => input.addEventListener('input', onInput));
 
     /*
+     * Radios and checkboxes fire `change`, not `input`, so the listener above
+     * never reaches them -- the "choose a plan" error would stay on screen
+     * after the parent had chosen one. Bound as a second listener rather than
+     * swapping the event, because a text field that only cleared on `change`
+     * would hold its error until it lost focus.
+     */
+    const choiceInputs = [...form.querySelectorAll('input[type="radio"], input[type="checkbox"]')];
+    choiceInputs.forEach((input) => input.addEventListener('change', onInput));
+
+    /*
      * Swap the two native controls for select-based pickers: day/month/year in
      * the order the date is spoken, and 24-hour hour/minute lists instead of a
      * masked AM/PM field. Done here rather than in the HTML because the year
@@ -561,6 +598,7 @@ export default function RegistrationForm() {
         input?.removeEventListener('change', handler)
       );
       textInputs.forEach((input) => input.removeEventListener('input', onInput));
+      choiceInputs.forEach((input) => input.removeEventListener('change', onInput));
       teardowns.forEach((restore) => restore());
       closeSuccessModal?.();
       honeypot.remove();

@@ -87,6 +87,10 @@ const FIELD_MESSAGES = {
     type: 'PDF, JPG, PNG, WebP ან HEIC',
     size: 'აღემატება 10 MB-ს',
   },
+  trainingPlan: {
+    required: 'აირჩიეთ ვარჯიშის გეგმა',
+    invalid: 'აირჩიეთ ვარჯიშის გეგმა',
+  },
   consent: { required: 'დაეთანხმეთ მონაცემთა დამუშავებას' },
 };
 
@@ -217,6 +221,17 @@ export default function HeroRegisterWizard() {
 
     function field(name) {
       return form.querySelector(`[name="${name}"]`);
+    }
+
+    /**
+     * The selected value of a radio group, or '' when none is chosen.
+     *
+     * `field()` returns the first element with the name, which for a radio
+     * group is the first *option*, not the group's answer -- its `.value` reads
+     * 'standard' even when nothing has been clicked.
+     */
+    function checkedValue(name) {
+      return form.querySelector(`[name="${name}"]:checked`)?.value ?? '';
     }
 
     function valueOf(name) {
@@ -441,6 +456,14 @@ export default function HeroRegisterWizard() {
       if (which === 4) {
         checkFile('photo', PHOTO_TYPES, bad);
         checkFile('form100', DOC_TYPES, bad);
+
+        // A radio group, so `field()` -- which returns the first match -- would
+        // report the first option rather than the group's answer.
+        if (!checkedValue('trainingPlan')) {
+          setError('trainingPlan', 'required');
+          bad.push('trainingPlan');
+        }
+
         if (!field('consent')?.checked) {
           setError('consent', 'required');
           bad.push('consent');
@@ -555,6 +578,9 @@ export default function HeroRegisterWizard() {
       }
       // The card has no comment box; the field exists on the API.
       body.set('message', '');
+      // Set from the group's checked option, not from TEXT_FIELDS: `field()`
+      // would hand back the first radio and post 'standard' whatever was picked.
+      body.set('trainingPlan', checkedValue('trainingPlan'));
       body.set('website', honeypot.value);
       // Appended only when chosen: setting an absent file would post the string
       // "undefined" as the field's value, which the route would read as a file
@@ -635,9 +661,14 @@ export default function HeroRegisterWizard() {
     const onInput = (event) => setError(event.target.name, null);
     inputs.forEach((input) => input.addEventListener('input', onInput));
 
-    const consent = field('consent');
-    const onConsent = () => setError('consent', null);
-    consent?.addEventListener('change', onConsent);
+    /*
+     * Radios and checkboxes fire `change`, not `input`, so the listener above
+     * never reaches them and their errors would stay on screen after being
+     * answered. This covers the consent box and the training-plan group alike.
+     */
+    const choiceInputs = [...form.querySelectorAll('input[type="radio"], input[type="checkbox"]')];
+    const onChoice = (event) => setError(event.target.name, null);
+    choiceInputs.forEach((input) => input.addEventListener('change', onChoice));
 
     /*
      * Swap the two native controls for select-based pickers: day/month/year in
@@ -670,7 +701,7 @@ export default function HeroRegisterWizard() {
         input?.removeEventListener('change', handler)
       );
       inputs.forEach((input) => input.removeEventListener('input', onInput));
-      consent?.removeEventListener('change', onConsent);
+      choiceInputs.forEach((input) => input.removeEventListener('change', onChoice));
       teardowns.forEach((restore) => restore());
       closeSuccessModal?.();
       honeypot.remove();

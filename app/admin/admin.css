@@ -1392,3 +1392,11 @@
     width: 100%;
   }
 }
+
+/* The training-plan cell. Short label in the table with the full one on the
+   title attribute; kept narrow so it cannot push the status pill off screen. */
+.admin-table td.admin-plan-cell {
+  max-width: 150px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}

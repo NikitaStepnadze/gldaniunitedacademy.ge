@@ -287,6 +287,31 @@
                                             <span class="hero-wizard-files" data-files-for="form100" hidden></span>
                                             <span class="hero-wizard-error" data-error-for="form100" hidden></span>
                                         </fieldset>
+                                        <!--
+                                          The training plan. Sits with the
+                                          consent on the last step because both
+                                          are decisions rather than data to
+                                          copy off a document, and the earlier
+                                          steps are already full.
+                                        -->
+                                        <fieldset class="hero-wizard-plans">
+                                            <legend class="hero-wizard-label">ვარჯიშის გეგმა *</legend>
+                                            <label class="hero-wizard-plan" for="hero-plan-standard">
+                                                <input type="radio" id="hero-plan-standard" name="trainingPlan" value="standard">
+                                                <span class="hero-wizard-plan-body">
+                                                    <span class="hero-wizard-plan-title">130₾/თვეში</span>
+                                                    <span class="hero-wizard-plan-note">კვირაში 3 ვარჯიში</span>
+                                                </span>
+                                            </label>
+                                            <label class="hero-wizard-plan" for="hero-plan-extended">
+                                                <input type="radio" id="hero-plan-extended" name="trainingPlan" value="extended">
+                                                <span class="hero-wizard-plan-body">
+                                                    <span class="hero-wizard-plan-title">3 + 2 დამატებითი ვარჯიში</span>
+                                                    <span class="hero-wizard-plan-note">ფასი ადგილზე განხილვით</span>
+                                                </span>
+                                            </label>
+                                            <span class="hero-wizard-error" data-error-for="trainingPlan" hidden></span>
+                                        </fieldset>
                                         <div class="hero-wizard-consent">
                                             <input type="checkbox" id="hero-consent" name="consent">
                                             <label for="hero-consent">ვეთანხმები მონაცემთა დამუშავებას ჩარიცხვის მიზნით. *</label>

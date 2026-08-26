@@ -370,6 +370,38 @@
                                 </div>
                             </fieldset>
 
+                            <!--
+                              The training plan. A radio group rather than a
+                              select: there are two options, one of them two
+                              lines long, and a select would hide the choice
+                              behind a tap and truncate the longer label.
+
+                              The value posted is the plan key, never the
+                              Georgian sentence -- see TRAINING_PLANS in
+                              lib/appwrite/enquiries.js for why.
+                            -->
+                            <fieldset class="registration-group">
+                                <legend class="registration-legend">ვარჯიშის გეგმა <span class="req" aria-hidden="true">*</span></legend>
+                                <div class="registration-plans">
+                                    <label class="registration-plan" for="reg-plan-standard">
+                                        <input type="radio" id="reg-plan-standard" name="trainingPlan"
+                                            value="standard" required aria-required="true">
+                                        <span class="registration-plan-body">
+                                            <span class="registration-plan-title">130₾/თვეში</span>
+                                            <span class="registration-plan-note">კვირაში 3 ვარჯიში</span>
+                                        </span>
+                                    </label>
+                                    <label class="registration-plan" for="reg-plan-extended">
+                                        <input type="radio" id="reg-plan-extended" name="trainingPlan"
+                                            value="extended">
+                                        <span class="registration-plan-body">
+                                            <span class="registration-plan-title">კვირაში 3 ვარჯიში + 2 დამატებითი ვარჯიში</span>
+                                            <span class="registration-plan-note">ფასი ადგილზე განხილვით</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="registration-error" data-error-for="trainingPlan"></span>
+                            </fieldset>
                             <fieldset class="registration-group">
                                 <legend class="registration-legend">დამატებითი ინფორმაცია</legend>
                                 <div class="registration-field">

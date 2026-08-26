@@ -277,6 +277,12 @@ const SCHEMA = [
       { kind: 'string', key: 'photoId', size: 64, required: false },
       // Which form produced the row: 'contact' or 'registration'. Lets the
       // admin inbox tell a full enrolment application from a general question.
+      // Which training plan the parent chose: 'standard' (130 GEL/month, three
+      // sessions a week) or 'extended' (those three plus two more, priced in
+      // person). Stored as the key rather than the Georgian label so the price
+      // and the wording can change without rewriting every stored row --
+      // lib/appwrite/enquiries.js owns the labels.
+      { kind: 'string', key: 'trainingPlan', size: 32, required: false },
       { kind: 'string', key: 'source', size: 32, required: false, xdefault: 'contact' },
       // Admin workflow: 'review', 'active' or 'declined'. Left as a plain string
       // rather than an enum so the set can change without a column migration;
