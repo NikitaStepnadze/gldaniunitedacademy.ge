@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
 import { isAuthenticated } from '../../../lib/appwrite/auth';
 import {
+  createEnquiry,
   DEFAULT_SORT,
   listEnquiries,
   SORTS,
@@ -18,6 +20,60 @@ import EnquiryToolbar from './EnquiryToolbar';
 import SortableHeader from './SortableHeader';
 
 export const dynamic = 'force-dynamic';
+
+/** Random integer in [min, max], inclusive. */
+function randomInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+/** A run of `n` random digits, as a string. */
+function randomDigits(n) {
+  let out = '';
+  for (let i = 0; i < n; i += 1) out += randomInt(0, 9);
+  return out;
+}
+
+/**
+ * Fills a full registration with placeholder data so the developer form does
+ * not have to be typed out by hand while testing the admin panel.
+ *
+ * Every value is shaped to pass validateRegistration: real patterns (11-digit
+ * personal numbers, 9-digit phones, a birth date landing inside the academy's
+ * age range) rather than arbitrary text, since the point is a row that looks
+ * and behaves like a genuine application in every list, filter and export.
+ */
+function randomTestRegistration() {
+  const n = randomInt(1, 9999);
+  const age = randomInt(4, 17);
+  const now = new Date();
+  const dob = new Date(Date.UTC(now.getUTCFullYear() - age, now.getUTCMonth(), now.getUTCDate()));
+  const schoolFromHour = randomInt(8, 12);
+
+  return {
+    childFirstName: `ტესტი${n}`,
+    childLastName: `ტესტი${n}`,
+    childDob: dob.toISOString().slice(0, 10),
+    childIdNumber: randomDigits(11),
+    address: `ტესტი${n} ქუჩა ${randomInt(1, 200)}`,
+    schoolFrom: `${String(schoolFromHour).padStart(2, '0')}:00`,
+    schoolTo: `${String(schoolFromHour + randomInt(1, 4)).padStart(2, '0')}:00`,
+    trainingPlan: TRAINING_PLAN_KEYS[randomInt(0, TRAINING_PLAN_KEYS.length - 1)],
+    motherFirstName: `ტესტი${n}`,
+    motherLastName: `ტესტი${n}`,
+    motherIdNumber: randomDigits(11),
+    motherPhone: `5${randomDigits(8)}`,
+    fatherFirstName: '',
+    fatherLastName: '',
+    fatherIdNumber: '',
+    fatherPhone: '',
+    message: `ტესტი${n}`,
+    name: `ტესტი${n} ტესტი${n}`,
+    phone: `5${randomDigits(8)}`,
+    childAge: String(age),
+    source: 'registration',
+    contactParent: 'mother',
+  };
+}
 
 /** Formats an ISO timestamp for a Georgian reader. */
 function formatDate(iso) {
@@ -110,6 +166,21 @@ export default async function EnquiriesPage({ searchParams }) {
 
   const filtering = search !== '' || source !== undefined || plan !== undefined;
 
+  /**
+   * Creates one throwaway registration with random placeholder data.
+   *
+   * Only for exercising the admin panel without retyping a full registration
+   * form by hand each time -- the row is a real enquiry in every other respect,
+   * so it shows up, filters and exports exactly like a genuine application.
+   */
+  async function addTestEnquiry() {
+    'use server';
+    if (!(await isAuthenticated())) redirect('/admin/login');
+    await createEnquiry(randomTestRegistration());
+    revalidatePath('/admin/enquiries');
+    redirect('/admin/enquiries');
+  }
+
   return (
     <main className="admin-main">
       <h1 className="admin-title">
@@ -133,6 +204,11 @@ export default async function EnquiriesPage({ searchParams }) {
         <a className="admin-btn secondary small" href="/api/admin/export?all=1" download>
           ⭳ ყველა (არქივთან ერთად)
         </a>
+        <form action={addTestEnquiry} style={{ display: 'contents' }}>
+          <button type="submit" className="admin-btn secondary small">
+            + სატესტო განაცხადი
+          </button>
+        </form>
       </div>
 
       <div className="admin-filters">
@@ -225,6 +301,9 @@ export default async function EnquiriesPage({ searchParams }) {
                     className={archived ? undefined : (row.seen ? 'row-seen' : 'row-new')}
                   >
                     <td>
+                      {!archived && !row.seen && (
+                        <span className="unread-dot" aria-label="წაუკითხავი" title="წაუკითხავი" />
+                      )}
                       <Link href={`/admin/enquiries/${row.$id}`}>{primary}</Link>
                       <div style={{ color: '#8a93a8', fontSize: 12 }}>{secondary}</div>
                     </td>

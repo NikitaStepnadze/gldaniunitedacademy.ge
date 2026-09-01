@@ -1167,11 +1167,11 @@
    The greens and yellows are the same family as the status pills above, one
    step paler so the pill still reads clearly on top of the row. */
 .admin-table tr.row-new td {
-  background: #fffdf2;
+  background: #fff3c4;
 }
 
 .admin-table tr.row-new:hover td {
-  background: #fff9e0;
+  background: #ffec9e;
 }
 
 /* The applicant's name carries the weight, so an unread row reads as unread
@@ -1182,11 +1182,24 @@
 }
 
 .admin-table tr.row-seen td {
-  background: #fbfefb;
+  background: #dcf5e0;
 }
 
 .admin-table tr.row-seen:hover td {
-  background: #f2faf3;
+  background: #c9edd0;
+}
+
+/* Left-side dot on the applicant's name cell, matching the familiar
+   "unread message" convention -- a filled dot rather than relying on the
+   row tint alone, since colour-only signals are easy to miss at a glance. */
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #e0a800;
+  vertical-align: middle;
 }
 
 /* ---- Applications toolbar: search, type filter, sort ----------------------
