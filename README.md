@@ -198,7 +198,7 @@ footer and contact page, and are marked up as `tel:` / `mailto:` / map links:
 
 | Detail | Value |
 | --- | --- |
-| Phone | `557 007 887` (`tel:+995557007887`) |
+| Phone | `551 390 993` (`tel:+995551390993`) |
 | Email | `gldani.united@gmail.com` |
 | Address | `გლდანი 1 მიკრორაიონი, 39 საჯარო სკოლის ტერიტორია` |
 | Map pin | https://maps.app.goo.gl/ZpRe6mFbU4BrJxFe8 |

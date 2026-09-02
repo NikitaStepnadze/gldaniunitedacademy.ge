@@ -21,11 +21,11 @@ const MESSAGES = {
   opening: 'იხსნება...',
   success: 'გადამისამართდით WhatsApp-ზე. თუ ის არ გაიხსნა, დააჭირეთ ღილაკს ხელახლა.',
   validation: 'გთხოვთ შეავსოთ სახელი, ტელეფონი, ელფოსტა და შეკითხვა სწორად.',
-  blocked: 'WhatsApp ვერ გაიხსნა. გთხოვთ დაგვირეკოთ: 557 007 887.',
+  blocked: 'WhatsApp ვერ გაიხსნა. გთხოვთ დაგვირეკოთ: 551 390 993.',
 };
 
 /** The academy's WhatsApp number, digits only, as wa.me expects it. */
-const WHATSAPP_NUMBER = '995557007887';
+const WHATSAPP_NUMBER = '995551390993';
 
 /** Same shape check the API used: something@something.tld. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
