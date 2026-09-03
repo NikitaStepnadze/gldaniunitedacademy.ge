@@ -21,7 +21,7 @@ const MESSAGES = {
   opening: 'იხსნება...',
   success: 'გადამისამართდით WhatsApp-ზე. თუ ის არ გაიხსნა, დააჭირეთ ღილაკს ხელახლა.',
   validation: 'გთხოვთ შეავსოთ სახელი, ტელეფონი, ელფოსტა და შეკითხვა სწორად.',
-  blocked: 'WhatsApp ვერ გაიხსნა. გთხოვთ დაგვირეკოთ: 551 390 993.',
+  blocked: 'WhatsApp ვერ გაიხსნა. გთხოვთ დაგვირეკოთ: 551 39 09 93.',
 };
 
 /** The academy's WhatsApp number, digits only, as wa.me expects it. */
