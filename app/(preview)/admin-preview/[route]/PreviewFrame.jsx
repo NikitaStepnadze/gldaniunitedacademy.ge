@@ -32,6 +32,12 @@ export default function PreviewFrame({ route }) {
       return originals.get(key);
     }
 
+    function rememberAttr(attr, key, element) {
+      const cacheKey = `${attr}:${key}`;
+      if (!originals.has(cacheKey)) originals.set(cacheKey, element.getAttribute(attr) ?? '');
+      return originals.get(cacheKey);
+    }
+
     function applyDraft(draft) {
       for (const element of document.querySelectorAll('[data-cms]')) {
         const key = element.getAttribute('data-cms');
@@ -56,6 +62,19 @@ export default function PreviewFrame({ route }) {
           // the picture would not appear to change at all.
           element.removeAttribute('srcset');
         }
+      }
+
+      // `data-cms-attr="attr:key"` mirrors the same override onto a bare
+      // attribute -- see lib/cms.js for why the counters need this.
+      for (const element of document.querySelectorAll('[data-cms-attr]')) {
+        const [attr, key] = element.getAttribute('data-cms-attr').split(':');
+        if (!attr || !key) continue;
+
+        const original = rememberAttr(attr, key, element);
+        const next = draft[key];
+
+        const value = typeof next === 'string' && next.trim() !== '' ? next : original;
+        if (element.getAttribute(attr) !== value) element.setAttribute(attr, value);
       }
     }
 

@@ -1486,14 +1486,23 @@ a.hero-register-submit {
 }
 
 /*
- * The benefit and testimonial card copy. These carry no colour of their own, so
- * inheriting white is enough -- stated explicitly because the paragraph is the
- * whole point of the card and should not silently depend on an ancestor.
+ * The benefit card copy sits directly on the dark section background, so it
+ * needs the inherited white stated explicitly -- the paragraph is the whole
+ * point of the card and should not silently depend on an ancestor.
  */
-.background-black .description-benefit,
+.background-black .description-benefit {
+	color: var(--white, #fff);
+}
+
+/*
+ * The testimonial cards are white boxes floated on the dark section, not dark
+ * themselves -- so their copy needs a dark colour of its own rather than the
+ * section's inherited white, which made both the stat line and the quote
+ * unreadable on the white card.
+ */
 .background-black p.testimonial,
 .background-black .testimonial-box span {
-	color: var(--white, #fff);
+	color: var(--black, #121212);
 }
 
 /*

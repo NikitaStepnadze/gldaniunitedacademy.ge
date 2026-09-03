@@ -244,6 +244,28 @@ svg [fill="#cef531"] {
     border-top: 3px solid var(--gold);
 }
 
+/* Footer contact block: same navy-on-navy bug as the header bar above.
+   `a { color: var(--navy) }` from section 2 puts navy text on the footer's
+   own navy background for the phone and address links, so both were
+   invisible until :hover switched them to gold. Named directly, like the
+   header-top-inner fix, since the plain <p>/<span>/<i> here inherit no
+   colour of their own either. */
+.new-letter .text-phone,
+.new-letter .text-phone a,
+.new-letter .text-phone .address p,
+.new-letter .text-phone .address span,
+.new-letter .text-phone .address span a,
+.menu-footer > p,
+.menu-footer > p a,
+.menu-footer > p i {
+    color: var(--white);
+}
+
+.new-letter .text-phone .address span a:hover,
+.menu-footer > p a:hover {
+    color: var(--gold-light);
+}
+
 /* 5. Component fixes
 -------------------------------------------------------------- */
 

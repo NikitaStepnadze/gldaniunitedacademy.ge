@@ -625,6 +625,21 @@ p.flat-description-slider {
 	color: var(--white);
 }
 
+.team-item .position-member {
+	font-family: 'Oswald';
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--primary);
+	margin-bottom: 6px;
+}
+
+.team-item .position-member:empty {
+	display: none;
+}
+
 .team-item h3.name-member {
 	font-family: 'Oswald';
 	font-size: 24px;
