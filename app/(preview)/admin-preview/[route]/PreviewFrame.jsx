@@ -13,6 +13,10 @@ import { useEffect } from 'react';
  * -- is what makes it feel live: no network round trip, no reload, and the
  * theme's carousels and scroll animations keep whatever state they were in.
  *
+ * Carousel autoplay is switched off here, unlike on the public site: a slider
+ * that advances on its own would carry the text being edited out of view
+ * mid-keystroke. See `freezeCarousels`.
+ *
  * Every element's original text is captured on first touch, so clearing a
  * field puts the theme's own copy back rather than leaving the box empty. That
  * matches what saving an empty value actually does on the public site.
@@ -204,6 +208,19 @@ export default function PreviewFrame({ route }) {
 
       const delay = revealSlide(element);
 
+      /*
+       * Re-freeze after driving the widget.
+       *
+       * Both engines can re-arm their timer as a side effect of being moved:
+       * Owl restarts autoplay when a `to.owl.carousel` lands, and Swiper's
+       * `slideTo` does the same on a build where the module is active. Without
+       * this, clicking a slide field turned autoplay back on and the carousel
+       * slid away from the very slide the click had just brought up.
+       */
+      freezeCarousels();
+      window.clearTimeout(pendingFreeze);
+      pendingFreeze = window.setTimeout(freezeCarousels, delay + 50);
+
       // Highlight immediately so the click feels answered even while the
       // carousel is still transitioning underneath.
       markFocused(element);
@@ -225,6 +242,9 @@ export default function PreviewFrame({ route }) {
 
     /** The deferred scroll, so a second click cancels the first one's. */
     let pendingScroll;
+
+    /** The re-freeze queued behind a carousel transition, for the same reason. */
+    let pendingFreeze;
 
     function markFocused(element) {
       window.clearTimeout(clearMark);
@@ -254,6 +274,96 @@ export default function PreviewFrame({ route }) {
         focusKey(data.key);
       }
     }
+
+    /**
+     * Stops every carousel on the page from advancing on its own.
+     *
+     * The preview is an editing surface, not the site: while the admin is
+     * typing into "slide 2", the theme's autoplay was sliding slide 3 into
+     * view underneath them, taking the edited text -- and the yellow ring
+     * pointing at it -- off screen mid-keystroke. There is no version of that
+     * which is useful here, so autoplay is off for the whole session rather
+     * than merely paused; the admin moves between slides by clicking the field
+     * they want, which `focusKey` already answers by revealing that slide.
+     *
+     * Both engines are handled, and neither is assumed to exist: the page is
+     * the theme's own markup, so what is on it depends on the route.
+     *
+     *   - Owl (`.swiper-testimonial`, `.sologan-logo`, `.owl-themes`) is the
+     *     one that actually rotates today. `stop.owl.autoplay` is Owl 2's own
+     *     API, so the widget stays internally consistent and its nav arrows
+     *     keep working -- unlike ripping the plugin's timer out by hand.
+     *   - Swiper (the hero) is configured without autoplay in main.js today,
+     *     so that branch is insurance rather than a fix: it costs one call per
+     *     instance and means enabling autoplay on the public hero later cannot
+     *     quietly break editing.
+     *
+     * `disableOnInteraction` is deliberately not used: it only pauses until
+     * the next interaction, and applying a draft counts as none, so autoplay
+     * would resume on its own a few seconds into an edit.
+     */
+    function freezeCarousels() {
+      for (const root of document.querySelectorAll('.swiper')) {
+        const instance = root.swiper;
+        // `.autoplay` is absent unless the build includes the module, and
+        // `stop` is absent on older ones -- both are checked because the theme
+        // ships a bundle it does not pin.
+        if (typeof instance?.autoplay?.stop === 'function') instance.autoplay.stop();
+        // Keeps a later `slideTo` from re-arming the timer on builds where
+        // stopping alone does not clear the flag.
+        if (instance?.params) instance.params.autoplay = false;
+      }
+
+      if (window.jQuery) {
+        for (const root of document.querySelectorAll('.owl-carousel')) {
+          // Only initialised widgets answer; Owl stores its instance under this
+          // key as it boots, so its presence doubles as the readiness check.
+          const owl = window.jQuery(root).data('owlCarousel');
+          if (!owl) continue;
+
+          /*
+           * Clearing the flag matters more than stopping the timer.
+           *
+           * `stop.owl.autoplay` only calls `clearInterval`, and Owl re-arms
+           * itself on every `translated.owl.carousel` and
+           * `refreshed.owl.carousel` for as long as `settings.autoplay` is
+           * truthy -- so a bare stop is undone by the next transition, which
+           * on this page is the one `revealSlide` just triggered.
+           *
+           * `options` has to be cleared alongside `settings` because
+           * `Owl.setup()` rebuilds `settings` from `options` whenever the
+           * viewport crosses a responsive breakpoint, and the testimonial and
+           * logo carousels both define breakpoints. Clearing only `settings`
+           * meant resizing the preview -- or flipping the editor's own
+           * desktop/mobile toggle, which resizes the iframe -- brought
+           * autoplay back.
+           */
+          if (owl.settings) owl.settings.autoplay = false;
+          if (owl.options) owl.options.autoplay = false;
+          window.jQuery(root).trigger('stop.owl.autoplay');
+        }
+      }
+    }
+
+    /*
+     * Freeze on a schedule, not just once.
+     *
+     * The theme's scripts are deferred and jQuery-gated, so at the moment this
+     * effect runs not one carousel exists yet -- a single call here would find
+     * nothing and the page would rotate anyway. Owl also re-arms its timer
+     * when the window resizes, and Swiper re-inits on breakpoint changes, so
+     * the freeze has to be re-applied rather than assumed permanent.
+     *
+     * A short poll covers initialisation whenever it lands, then hands over to
+     * the resize handler, which is the only thing that revives autoplay after
+     * boot. Polling ten times a second for six seconds on an admin-only page
+     * is cheaper than the MutationObserver it would otherwise take to notice
+     * a carousel appearing.
+     */
+    freezeCarousels();
+    const freezePoll = window.setInterval(freezeCarousels, 100);
+    const stopFreezePoll = window.setTimeout(() => window.clearInterval(freezePoll), 6000);
+    window.addEventListener('resize', freezeCarousels);
 
     window.addEventListener('message', onMessage);
 
@@ -339,6 +449,9 @@ export default function PreviewFrame({ route }) {
       window.removeEventListener('message', onAcknowledged);
       document.removeEventListener('visibilitychange', reannounce);
       window.removeEventListener('focus', reannounce);
+      window.removeEventListener('resize', freezeCarousels);
+      window.clearInterval(freezePoll);
+      window.clearTimeout(stopFreezePoll);
       window.clearInterval(retry);
       window.clearTimeout(stopRetrying);
       // The focus handlers leave two timers in flight -- one to scroll after a
@@ -346,6 +459,7 @@ export default function PreviewFrame({ route }) {
       // have to go when the effect does.
       window.clearTimeout(clearMark);
       window.clearTimeout(pendingScroll);
+      window.clearTimeout(pendingFreeze);
     };
   }, [route]);
 
