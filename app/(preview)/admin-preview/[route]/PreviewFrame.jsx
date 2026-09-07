@@ -42,6 +42,74 @@ export default function PreviewFrame({ route }) {
       return originals.get(cacheKey);
     }
 
+    /**
+     * Stops the theme's count-up animation from eating the draft.
+     *
+     * `.numb-count` is animated by countTo (main.js), armed by a waypoint that
+     * then rewrites the element's text frame by frame from 0 up to `data-to`.
+     * Two things go wrong on an editing surface. The waypoint fires when the
+     * counter scrolls into view -- which is exactly what `focusKey` does to it
+     * -- so clicking the field started an animation that overwrote the number
+     * being typed. And because the animation ends at `data-to`, a half-typed
+     * "1" on the way to "12" was replaced by a sweep up to the old value,
+     * making the field look like it had refused the edit.
+     *
+     * Killing the animation rather than racing it is the only stable answer:
+     * the admin wants the literal value they typed, not a number sweeping
+     * toward it. countTo exposes no teardown, so the interval it parks on the
+     * element's jQuery data is cleared directly, and the waypoint attribute is
+     * dropped so a later scroll cannot re-arm it.
+     */
+    function stopCounterAnimation(counter) {
+      if (!counter.classList.contains('numb-count')) return;
+
+      counter.removeAttribute('data-waypoint-active');
+
+      if (!window.jQuery) return;
+
+      /*
+       * Unbind the trigger, not just the current sweep.
+       *
+       * main.js binds `on-appear` on the `.flat-counter` wrapper and starts a
+       * fresh countTo from inside that handler, so clearing the interval alone
+       * is undone the next time the waypoint fires -- and `focusKey` scrolls
+       * the counter into view, which is precisely what fires it. Removing the
+       * handler is what makes the value the admin typed stay put.
+       */
+      const wrapper = counter.closest('.flat-counter');
+      if (wrapper) window.jQuery(wrapper).off('on-appear');
+
+      /*
+       * The handle is `data('countTo').interval`, not the data itself.
+       *
+       * jquery-countTo stores an object under the `countTo` key and hangs its
+       * `setInterval` id off that object's `interval` property (see
+       * public/javascript/jquery-countTo.js). Clearing the object rather than
+       * the property left the timer running, so the sweep carried on repainting
+       * the element and the typed number was still replaced.
+       */
+      const $counter = window.jQuery(counter);
+      const data = $counter.data('countTo');
+      if (data?.interval) window.clearInterval(data.interval);
+      $counter.removeData('countTo');
+    }
+
+    /**
+     * Disarms every counter on the page, not only the one being edited.
+     *
+     * Scrolling to any field drags other counters through the waypoint's 90%
+     * trigger line, so leaving the rest armed meant editing one number started
+     * sweeps on its three neighbours -- each of which ends at its own `data-to`
+     * and so wipes whatever draft was showing there. Since a count-up animation
+     * has no value on an editing surface at all, all four are stopped up front
+     * and the page simply shows its numbers.
+     */
+    function freezeCounters() {
+      for (const counter of document.querySelectorAll('.numb-count')) {
+        stopCounterAnimation(counter);
+      }
+    }
+
     function applyDraft(draft) {
       for (const element of document.querySelectorAll('[data-cms]')) {
         const key = element.getAttribute('data-cms');
@@ -51,7 +119,12 @@ export default function PreviewFrame({ route }) {
         // An absent or blank draft value means "no override" -- the same rule
         // the server applies -- so restore what the theme shipped.
         const value = typeof next === 'string' && next.trim() !== '' ? next : original;
-        if (element.textContent !== value) element.textContent = value;
+        if (element.textContent !== value) {
+          // Before writing, not after: countTo repaints on an interval, so a
+          // sweep still running would undo this assignment a frame later.
+          stopCounterAnimation(element);
+          element.textContent = value;
+        }
       }
 
       for (const element of document.querySelectorAll('[data-cms-img]')) {
@@ -96,6 +169,38 @@ export default function PreviewFrame({ route }) {
         .map(([key, value]) => `--${key.replace(/^color\./, '')}:${value}`);
 
       style.textContent = declarations.length ? `:root{${declarations.join(';')}}` : '';
+    }
+
+    /**
+     * Opens the tab panel an element is hidden inside.
+     *
+     * The about page's "მისია და მიდგომა" block is a Bootstrap 5 tab set, and
+     * only the first pane carries `show active` -- the second is
+     * `class="tab-pane fade"`, so it is `display:none` and everything in it
+     * measures as zero. That is why the four "ტაბი 2" bullet fields could not
+     * be highlighted at all: `focusKey` found their elements, rejected every
+     * one as hidden, and rang a box with no position on screen.
+     *
+     * The pane is activated by clicking its own trigger rather than by adding
+     * the classes by hand, so Bootstrap updates the button's `aria-selected`
+     * and deactivates the sibling pane itself -- leaving the widget in a state
+     * the admin can keep clicking. Returns the ms to wait for the fade, since
+     * measuring a scroll target mid-transition reads a position it is leaving.
+     */
+    function revealTab(element) {
+      const pane = element.closest('.tab-pane');
+      if (!pane || pane.classList.contains('active')) return 0;
+
+      const trigger = document.querySelector(
+        `[data-bs-target="#${pane.id}"], [href="#${pane.id}"], [aria-controls="${pane.id}"]`
+      );
+      if (!trigger) return 0;
+
+      trigger.click();
+
+      // Bootstrap's .fade transition is 150ms; a little headroom covers the
+      // class swap landing on the next frame.
+      return 220;
     }
 
     /**
@@ -195,18 +300,75 @@ export default function PreviewFrame({ route }) {
        * further down the page). Preferring a visible match fixes both.
        */
       const matches = [...document.querySelectorAll(selector)];
-      if (matches.length === 0) return;
+
+      /*
+       * A key with no element on this page is a wiring bug, not a no-op.
+       *
+       * This used to `return` in silence, which is how eight counter fields
+       * shipped pointing at markup that lives on another page: the admin
+       * clicked, nothing was highlighted, nothing was logged, and there was no
+       * way to tell "this field has no preview" from "the preview is broken".
+       * Telling the editor lets it say so, and the console line names the key
+       * for whoever is fixing the markers.
+       */
+      if (matches.length === 0) {
+        console.warn(
+          `[preview] no element carries data-cms="${key}" on route "${route}" -- ` +
+            'the field cannot be highlighted. Check that the marker is on this page.'
+        );
+        window.parent?.postMessage(
+          { source: 'gua-preview', type: 'focus-missed', key, route },
+          window.location.origin
+        );
+        return;
+      }
+
+      /*
+       * A clone is never the right answer; a closed tab is.
+       *
+       * These two hidden cases need opposite treatment, which is why the test
+       * is not simply "is it visible". An Owl clone is a duplicate of markup
+       * that exists elsewhere, so picking it is always wrong. An element in a
+       * closed tab pane is the only copy there is -- rejecting it for being
+       * hidden is what left the "ტაბი 2" fields with nothing to highlight, so
+       * it is accepted here and `revealTab` opens the pane below.
+       */
+      const usable = matches.filter((node) => !node.closest('.owl-item.cloned'));
+      const candidates = usable.length > 0 ? usable : matches;
 
       const element =
-        matches.find((node) => {
-          // offsetParent is null for display:none and for anything inside it,
-          // which is exactly the clone/hidden case we want to skip. A
-          // zero-sized box is hidden in practice too.
-          if (node.offsetParent === null && node.offsetWidth === 0) return false;
-          return !node.closest('.owl-item.cloned');
-        }) ?? matches[0];
+        // Prefer something already on screen...
+        candidates.find(
+          (node) => node.offsetParent !== null || node.offsetWidth > 0
+        ) ??
+        // ...else something we know how to reveal (a closed tab, a slide)...
+        candidates.find(
+          (node) => node.closest('.tab-pane') || node.closest('.swiper-slide, .owl-item')
+        ) ??
+        candidates[0];
 
-      const delay = revealSlide(element);
+      /*
+       * Disarm the counter before we scroll it into view.
+       *
+       * The count-up is triggered by a waypoint at 90% of the viewport, so the
+       * scroll below is itself what fires it. Doing this first means focusing a
+       * counter field cannot start a sweep that overwrites the value already on
+       * screen.
+       */
+      // Every counter, not just this one: the scroll below drags the others
+      // through the waypoint line too. See `freezeCounters`.
+      freezeCounters();
+
+      /*
+       * Open the tab first, then the slide.
+       *
+       * In that order because a slide can sit inside a tab pane: while the pane
+       * is still `display:none` the carousel inside it has no layout, so
+       * driving it would measure zero widths and land on the wrong slide. The
+       * scroll then waits for whichever transition is longer.
+       */
+      const tabDelay = revealTab(element);
+      const delay = Math.max(tabDelay, revealSlide(element));
 
       /*
        * Re-freeze after driving the widget.
@@ -219,7 +381,12 @@ export default function PreviewFrame({ route }) {
        */
       freezeCarousels();
       window.clearTimeout(pendingFreeze);
-      pendingFreeze = window.setTimeout(freezeCarousels, delay + 50);
+      // Counters too: a counter inside a tab pane that just opened had no
+      // layout when `freezeCounters` ran above, so it is re-swept here.
+      pendingFreeze = window.setTimeout(() => {
+        freezeCarousels();
+        freezeCounters();
+      }, delay + 50);
 
       // Highlight immediately so the click feels answered even while the
       // carousel is still transitioning underneath.
@@ -230,15 +397,17 @@ export default function PreviewFrame({ route }) {
        * still fading or sliding reads a position it is about to leave, which
        * put the page a few hundred pixels off -- or, for a slide that had not
        * started moving yet, at the top of the slider.
+       *
+       * Resolved late, not captured above: a tab that was still fading when
+       * this was queued now has layout, so an empty field's ring target can
+       * differ from what it would have been a moment ago. Scrolling to the box
+       * that is actually ringed is what keeps the two pointing at one place.
        */
       window.clearTimeout(pendingScroll);
       pendingScroll = window.setTimeout(() => {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ringTarget(element).scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, delay);
     }
-
-    /** The yellow ring, kept to one element at a time. */
-    let clearMark;
 
     /** The deferred scroll, so a second click cancels the first one's. */
     let pendingScroll;
@@ -246,17 +415,59 @@ export default function PreviewFrame({ route }) {
     /** The re-freeze queued behind a carousel transition, for the same reason. */
     let pendingFreeze;
 
+    /*
+     * The ring stays until another field takes over.
+     *
+     * It used to time out after 2600ms, which is shorter than it takes to think
+     * about a sentence: the admin clicked a field, glanced at the preview, and
+     * by the time they had typed a few words the marker they were relying on to
+     * know *which* element they were editing had already faded. Since only one
+     * element is ever ringed, and focusing another field moves it, there is
+     * nothing to clean up on a timer -- the next `markFocused` does it.
+     *
+     * The pulse animation still runs twice and stops, so the ring draws
+     * attention on arrival without pulsing distractingly for the whole edit.
+     */
+    /**
+     * The box to ring for an element that has none of its own.
+     *
+     * The four coach "position" fields ship empty -- `<div
+     * class="position-member" data-cms="...">` with no text -- and the theme
+     * hides an empty one with `.position-member:empty { display: none }`. That
+     * is correct for the site, but it leaves nothing to outline: a ring on a
+     * zero-height, `display:none` box is invisible, so focusing those fields
+     * looked like the highlight was broken.
+     *
+     * Ringing the closest laid-out ancestor points at the card the field
+     * belongs to, which is the useful answer -- the admin needs to know *where*
+     * they are typing, and an empty slot has no other visual identity. Bounded
+     * to a few levels so this degrades to "no ring" rather than ringing the
+     * whole page if the markup ever changes shape.
+     */
+    function ringTarget(element) {
+      if (element.offsetWidth > 0 && element.offsetHeight > 0) return element;
+
+      let node = element.parentElement;
+      for (let depth = 0; node && depth < 4; depth += 1) {
+        if (node.offsetWidth > 0 && node.offsetHeight > 0) return node;
+        node = node.parentElement;
+      }
+      return element;
+    }
+
     function markFocused(element) {
-      window.clearTimeout(clearMark);
       for (const node of document.querySelectorAll('.cms-preview-focus')) {
         node.classList.remove('cms-preview-focus');
       }
 
-      element.classList.add('cms-preview-focus');
-      clearMark = window.setTimeout(
-        () => element.classList.remove('cms-preview-focus'),
-        2600
-      );
+      const target = ringTarget(element);
+
+      // Restart the pulse even when the same element is re-focused: without the
+      // reflow between remove and add, the browser reuses the finished
+      // animation and re-clicking a field produces no visible feedback.
+      target.classList.remove('cms-preview-focus');
+      void target.offsetWidth;
+      target.classList.add('cms-preview-focus');
     }
 
     function onMessage(event) {
@@ -360,10 +571,23 @@ export default function PreviewFrame({ route }) {
      * is cheaper than the MutationObserver it would otherwise take to notice
      * a carousel appearing.
      */
-    freezeCarousels();
-    const freezePoll = window.setInterval(freezeCarousels, 100);
+    /*
+     * Counters are frozen on the same schedule, and for the same reason.
+     *
+     * jQuery, the waypoints plugin and main.js are all deferred, so at the
+     * moment this effect runs there is no `on-appear` handler to unbind yet.
+     * Riding the existing poll means whenever main.js does bind one, it is
+     * removed within 100ms -- before the admin can scroll a counter into view.
+     */
+    const freezeAll = () => {
+      freezeCarousels();
+      freezeCounters();
+    };
+
+    freezeAll();
+    const freezePoll = window.setInterval(freezeAll, 100);
     const stopFreezePoll = window.setTimeout(() => window.clearInterval(freezePoll), 6000);
-    window.addEventListener('resize', freezeCarousels);
+    window.addEventListener('resize', freezeAll);
 
     window.addEventListener('message', onMessage);
 
@@ -449,15 +673,14 @@ export default function PreviewFrame({ route }) {
       window.removeEventListener('message', onAcknowledged);
       document.removeEventListener('visibilitychange', reannounce);
       window.removeEventListener('focus', reannounce);
-      window.removeEventListener('resize', freezeCarousels);
+      window.removeEventListener('resize', freezeAll);
       window.clearInterval(freezePoll);
       window.clearTimeout(stopFreezePoll);
       window.clearInterval(retry);
       window.clearTimeout(stopRetrying);
       // The focus handlers leave two timers in flight -- one to scroll after a
-      // carousel settles, one to drop the ring. Both touch the DOM, so they
-      // have to go when the effect does.
-      window.clearTimeout(clearMark);
+      // carousel settles, one to re-freeze behind it. Both touch the DOM, so
+      // they have to go when the effect does.
       window.clearTimeout(pendingScroll);
       window.clearTimeout(pendingFreeze);
     };

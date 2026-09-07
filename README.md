@@ -206,6 +206,20 @@ footer and contact page, and are marked up as `tel:` / `mailto:` / map links:
 The map on `/contact` and `/about` is a keyless Google embed pinned to the
 coordinates behind that link (`41.7931358,44.8267380`).
 
+Those three values above are the defaults baked into the theme markup, and they
+are editable from **Admin -> Design** (`contact.email`, `contact.phone`,
+`contact.address`). Each is a single setting substituted into every place the
+markup mentions it -- header, footer, contact cards, the registration sidebar --
+rather than a `data-cms` marker per occurrence, because the same number appears
+more than twenty times across the four pages. Both the visible text and the
+`mailto:` / `tel:` href are rewritten, so an edited number is also the number
+that gets dialled. Leaving a field empty means "use the theme's own value", the
+same rule the content rows follow.
+
+Two things the settings deliberately do not touch: the map pin, which is a
+Google Maps URL no admin field can regenerate, and the WhatsApp number in
+`app/components/EnquiryForms.jsx`, which has no setting of its own.
+
 These placeholders are still outstanding:
 
 | Placeholder | Where |

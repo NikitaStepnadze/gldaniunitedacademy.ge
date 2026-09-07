@@ -70,13 +70,6 @@ const SETTINGS = [
     group: 'contact',
     label: 'Address',
   },
-  {
-    key: 'notify.enquiryEmail',
-    value: '',
-    kind: 'email',
-    group: 'contact',
-    label: 'Send new enquiries to',
-  },
 ];
 
 /**

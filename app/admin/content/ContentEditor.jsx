@@ -51,6 +51,15 @@ export default function ContentEditor({ rows }) {
   /** Which preview route has announced it can receive drafts, if any. */
   const [readyRoute, setReadyRoute] = useState(null);
 
+  /**
+   * Keys the preview reported it has no element for, so the field can say so.
+   *
+   * Keyed by CMS key rather than row id because that is what the preview knows
+   * about, and it never needs resetting: whether a marker exists on a page is a
+   * property of the markup, so an answer stays true for the whole session.
+   */
+  const [unpreviewable, setUnpreviewable] = useState({});
+
   const activeRoute = PAGES.find((page) => page.id === activePage)?.route ?? 'index';
 
   /*
@@ -150,6 +159,22 @@ export default function ContentEditor({ rows }) {
     function onMessage(event) {
       if (event.origin !== window.location.origin) return;
       if (event.data?.source !== 'gua-preview') return;
+
+      /*
+       * The preview could not find the field's element.
+       *
+       * Recorded per key rather than shown as a transient message, because the
+       * condition belongs to the field, not to the moment: the marker is on
+       * another page (or missing), so it will fail every time that field is
+       * focused. Marking the field itself is what stops this from looking like
+       * a preview glitch.
+       */
+      if (event.data.type === 'focus-missed' && event.data.key) {
+        setUnpreviewable((current) =>
+          current[event.data.key] ? current : { ...current, [event.data.key]: true }
+        );
+        return;
+      }
 
       if (event.data.type === 'ready') {
         setReadyRoute(event.data.route ?? null);
@@ -330,6 +355,13 @@ export default function ContentEditor({ rows }) {
                         onChange={(event) => setValue(row.$id, event.target.value)}
                         onFocus={() => focusInPreview(row.$id)}
                       />
+                    )}
+
+                    {unpreviewable[row.key] && (
+                      <p className="field-note">
+                        ეს ველი ამ გვერდის გადახედვაში არ ჩანს — ცვლილება მაინც
+                        შეინახება.
+                      </p>
                     )}
                   </div>
                 );

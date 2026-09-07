@@ -1,5 +1,5 @@
-import { getContentMap } from '../../lib/appwrite/content';
-import { applyContent } from '../../lib/cms';
+import { getContentMap, getSettingsMap } from '../../lib/appwrite/content';
+import { applyContactSettings, applyContent } from '../../lib/cms';
 import { getPageMarkup } from '../../lib/pages';
 
 /**
@@ -25,16 +25,18 @@ export default async function ThemePage({ route }) {
   const markup = await getPageMarkup(route);
 
   let content = {};
+  let settings = {};
   try {
-    content = await getContentMap();
+    // Both reads are cached under the same tag, so this is one round trip's
+    // worth of work on a cold cache and none on a warm one.
+    [content, settings] = await Promise.all([getContentMap(), getSettingsMap()]);
   } catch (error) {
     console.error('[cms] content unavailable, using theme defaults:', error.message);
   }
 
-  return (
-    <div
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: applyContent(markup, content) }}
-    />
-  );
+  // Contact details are a site-wide setting rather than a per-element content
+  // row, so they are substituted after the content overrides are in place.
+  const html = applyContactSettings(applyContent(markup, content), settings);
+
+  return <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: html }} />;
 }

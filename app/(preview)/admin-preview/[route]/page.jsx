@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { isAuthenticated } from '../../../../lib/appwrite/auth';
 import { getContentMap, getSettingsMap } from '../../../../lib/appwrite/content';
-import { applyContent, buildColorOverrides } from '../../../../lib/cms';
+import { applyContactSettings, applyContent, buildColorOverrides } from '../../../../lib/cms';
 import { getPageMarkup } from '../../../../lib/pages';
 
 import PreviewFrame from './PreviewFrame';
@@ -39,13 +39,18 @@ export default async function PreviewPage({ params }) {
   const markup = await getPageMarkup(route);
 
   let content = {};
+  let settings = {};
   let colorOverrides = null;
   try {
-    content = await getContentMap();
-    colorOverrides = buildColorOverrides(await getSettingsMap());
+    [content, settings] = await Promise.all([getContentMap(), getSettingsMap()]);
+    colorOverrides = buildColorOverrides(settings);
   } catch (error) {
     console.error('[preview] CMS unavailable, showing theme defaults:', error.message);
   }
+
+  // Same substitution the public page makes, so the preview shows the saved
+  // contact details rather than the theme's originals.
+  const html = applyContactSettings(applyContent(markup, content), settings);
 
   return (
     <>
@@ -58,7 +63,7 @@ export default async function PreviewPage({ params }) {
       */}
       <div
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: applyContent(markup, content) }}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
       <PreviewFrame route={route} />
     </>

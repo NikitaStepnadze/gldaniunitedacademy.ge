@@ -23,7 +23,15 @@ export default async function DesignPage({ searchParams }) {
   if (!(await isAuthenticated())) redirect('/admin/login');
 
   const query = await searchParams;
-  const rows = await listSettingRows();
+
+  /*
+   * `notify.enquiryEmail` was dropped: enquiries are read in the admin inbox,
+   * nothing ever emailed them, so the field only invited an admin to fill in a
+   * value that would silently do nothing. The row is gone from the seed and
+   * from the database; this filter keeps a stale one on an older environment
+   * from putting the dead field back on the page.
+   */
+  const rows = (await listSettingRows()).filter((row) => !row.key.startsWith('notify.'));
 
   // Same reason as the content page: keep the action's closure to primitives.
   const baseline = rows.map((row) => ({

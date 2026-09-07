@@ -815,6 +815,20 @@
   vertical-align: middle;
 }
 
+/*
+ * Says a field cannot be shown in the preview beside it.
+ *
+ * Deliberately an explanation rather than an error colour: the edit still
+ * saves and still appears on the public site, so treating it as a failure
+ * would be misleading. It is only the highlight that is unavailable.
+ */
+.field-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
 .editor-preview {
   position: sticky;
   top: 78px;
