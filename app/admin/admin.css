@@ -1406,6 +1406,38 @@
   opacity: 1;
 }
 
+.admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-checkbox input {
+  cursor: pointer;
+}
+
+.admin-date-range input[type='date'] {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-date-range input[type='date']:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
 @media (max-width: 720px) {
   .admin-toolbar-controls {
     width: 100%;
@@ -1417,6 +1449,15 @@
 
   .admin-select select {
     width: 100%;
+  }
+
+  .admin-date-range {
+    flex-basis: 100%;
+  }
+
+  .admin-date-range input[type='date'] {
+    flex: 1;
+    min-width: 0;
   }
 }
 

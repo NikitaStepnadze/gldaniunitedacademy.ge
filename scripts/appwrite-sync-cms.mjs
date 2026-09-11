@@ -81,6 +81,8 @@ const SECTION_LABELS = {
   review3: 'შეფასება 3',
   quote1: 'ციტატა 1',
   quote2: 'ციტატა 2',
+  stat1: 'სტატისტიკა 1',
+  stat2: 'სტატისტიკა 2',
   event1: 'ღონისძიება 1',
   // The theme reuses the `post` class for the about-section body copy and for
   // the role line under each testimonial, so these four are not one section.
@@ -93,6 +95,9 @@ const SECTION_LABELS = {
   hero: 'სათაური',
   footer: 'ფუტერი',
   mission: 'მისია და მიდგომა',
+  steps: 'ჩარიცხვის ეტაპები',
+  docs: 'საჭირო საბუთები',
+  help: 'დახმარება',
 };
 
 const FIELD_LABELS = {
@@ -127,10 +132,18 @@ const FIELD_LABELS = {
   image1: 'სურათი 1',
   image2: 'სურათი 2',
   pitch: 'მოედნის სურათი',
+  step1: 'ეტაპი 1',
+  step2: 'ეტაპი 2',
+  step3: 'ეტაპი 3',
+  step4: 'ეტაპი 4',
+  item1: 'პუნქტი 1',
+  item2: 'პუნქტი 2',
+  format: 'ფაილის ფორმატი',
+  optional: 'არასავალდებულობის შენიშვნა',
 };
 
 /** Longer copy gets a textarea in the admin panel rather than a one-line input. */
-const TEXTAREA_FIELDS = new Set(['text', 'formNote', 'description']);
+const TEXTAREA_FIELDS = new Set(['text', 'formNote', 'description', 'format', 'optional']);
 
 /**
  * Turns an unmapped key segment into something readable.

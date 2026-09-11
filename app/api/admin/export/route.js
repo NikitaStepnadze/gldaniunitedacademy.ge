@@ -12,6 +12,9 @@ import { buildEnquiriesWorkbook, safeFilename, XLSX_CONTENT_TYPE } from '../../.
 
 export const dynamic = 'force-dynamic';
 
+/** Matches a calendar date written as YYYY-MM-DD, as `<input type="date">` submits it. */
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Exports enquiries as an Excel workbook for a signed-in admin.
  *
@@ -48,6 +51,12 @@ export async function GET(request) {
   const sortParam = searchParams.get('sort');
   const sort = SORTS[sortParam] ? sortParam : DEFAULT_SORT;
 
+  const unseen = searchParams.get('unseen') === '1';
+  const dateFromParam = searchParams.get('dateFrom');
+  const dateFrom = DATE_PATTERN.test(dateFromParam) ? dateFromParam : undefined;
+  const dateToParam = searchParams.get('dateTo');
+  const dateTo = DATE_PATTERN.test(dateToParam) ? dateToParam : undefined;
+
   /*
    * The limit is well above any plausible number of applications for a single
    * academy and is here so a runaway read cannot hang the request. If it is
@@ -65,7 +74,9 @@ export async function GET(request) {
     ]);
     rows = [...live, ...archive];
   } else {
-    rows = await listEnquiries({ status, archived, limit: LIMIT, search, sort, source, plan });
+    rows = await listEnquiries({
+      status, archived, limit: LIMIT, search, sort, source, plan, unseen, dateFrom, dateTo,
+    });
   }
 
   if (rows.length >= LIMIT) {
@@ -80,7 +91,14 @@ export async function GET(request) {
   const filename = safeFilename(
     exportAll
       ? ['განაცხადები', 'ყველა']
-      : ['განაცხადები', archived ? 'არქივი' : null, status ? STATUS_LABELS[status] : null],
+      : [
+        'განაცხადები',
+        archived ? 'არქივი' : null,
+        status ? STATUS_LABELS[status] : null,
+        unseen ? 'წაუკითხავი' : null,
+        dateFrom ? `${dateFrom}` : null,
+        dateTo ? `${dateTo}` : null,
+      ],
     stamp
   );
 

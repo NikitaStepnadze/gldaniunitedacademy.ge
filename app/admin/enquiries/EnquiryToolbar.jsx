@@ -92,7 +92,11 @@ export default function EnquiryToolbar({
   const activeSort = searchParams.get('sort') ?? 'newest';
   const activeSource = searchParams.get('source') ?? '';
   const activePlan = searchParams.get('plan') ?? '';
-  const filtered = urlSearch !== '' || activeSource !== '' || activePlan !== '';
+  const activeUnseen = searchParams.get('unseen') === '1';
+  const activeDateFrom = searchParams.get('dateFrom') ?? '';
+  const activeDateTo = searchParams.get('dateTo') ?? '';
+  const filtered = urlSearch !== '' || activeSource !== '' || activePlan !== ''
+    || activeUnseen || activeDateFrom !== '' || activeDateTo !== '';
 
   return (
     <div className="admin-toolbar">
@@ -175,6 +179,42 @@ export default function EnquiryToolbar({
             ))}
           </select>
         </label>
+
+        {/*
+          * "Only unseen" -- the same flag that tints a row in the table, as a
+          * checkbox rather than a select since it is a single on/off switch.
+          */}
+        <label className="admin-checkbox">
+          <input
+            type="checkbox"
+            checked={activeUnseen}
+            onChange={(event) => apply({ unseen: event.target.checked ? '1' : '' })}
+          />
+          <span>მხოლოდ წაუკითხავი</span>
+        </label>
+
+        {/*
+          * Registration date range. Two plain date inputs rather than a picker
+          * library -- an admin filtering "from this date to that date" already
+          * knows the two days, and native `<input type="date">` gives that for
+          * free in every browser the panel needs to support.
+          */}
+        <label className="admin-select admin-date-range">
+          <span>თარიღი</span>
+          <input
+            type="date"
+            value={activeDateFrom}
+            onChange={(event) => apply({ dateFrom: event.target.value })}
+            aria-label="თარიღიდან"
+          />
+          <span aria-hidden="true">–</span>
+          <input
+            type="date"
+            value={activeDateTo}
+            onChange={(event) => apply({ dateTo: event.target.value })}
+            aria-label="თარიღამდე"
+          />
+        </label>
       </div>
 
       {/*
@@ -196,7 +236,9 @@ export default function EnquiryToolbar({
             <button
               type="button"
               className="admin-clear-filters"
-              onClick={() => apply({ q: '', source: '', plan: '' })}
+              onClick={() => apply({
+                q: '', source: '', plan: '', unseen: '', dateFrom: '', dateTo: '',
+              })}
             >
               ფილტრის მოხსნა
             </button>

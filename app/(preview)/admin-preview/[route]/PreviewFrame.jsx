@@ -269,9 +269,40 @@ export default function PreviewFrame({ route }) {
         const index = items.indexOf(owlItem);
 
         if (index >= 0) {
-          // `to` rather than `goTo`: this is Owl 2's API, and it accepts the
-          // stage index directly, clones included.
-          $owl.trigger('to.owl.carousel', [index, 300, true]);
+          /*
+           * `to.owl.carousel` does not take a stage index on a looped
+           * carousel -- Owl.prototype.to() (owl.carousel.js) reads its
+           * `position` argument as a *relative* target: it computes
+           * `distance = position - this.relative(this.current())` and moves
+           * by that many slides from wherever the carousel already is. Only
+           * the un-looped branch treats `position` as absolute.
+           *
+           * This carousel is initialised with `loop: true` (see
+           * `$('.swiper-testimonial').owlCarousel({ loop: true, ... })` in
+           * main.js), so passing the raw stage index -- which includes the
+           * cloned slides Owl prepends and appends to fake the loop -- was
+           * being read as "jump this many slides from here" instead of "go
+           * to this slide", landing on whatever neighbour that arithmetic
+           * happened to produce. That is why focusing "შეფასება 3" often
+           * scrolled the preview to slide 2's content instead: the ring found
+           * the right (non-cloned) element, but the carousel itself had
+           * driven to a different slide underneath it.
+           *
+           * `relative()` is Owl's own conversion from a stage index to the
+           * real, clone-free item index `to()` expects on a loop -- it
+           * strips the cloned run on each side (`stagePosition -
+           * clones.length / 2`) the same way `next()`/`prev()` do internally.
+           * Reusing the live instance's own method keeps this correct however
+           * many clones a given breakpoint's `items` setting produces, rather
+           * than recomputing that count by hand.
+           */
+          const owl = $owl.data('owlCarousel');
+          const target =
+            owl?.settings?.loop && typeof owl.relative === 'function'
+              ? owl.relative(index)
+              : index;
+
+          $owl.trigger('to.owl.carousel', [target, 300, true]);
           delay = Math.max(delay, 400);
         }
       }

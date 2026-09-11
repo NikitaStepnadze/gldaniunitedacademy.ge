@@ -86,6 +86,9 @@ function formatDate(iso) {
   });
 }
 
+/** Matches a calendar date written as YYYY-MM-DD, as `<input type="date">` submits it. */
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /** The sort dropdown's options, as { key: label }. */
 const SORT_OPTIONS = Object.fromEntries(
   Object.entries(SORTS).map(([key, sort]) => [key, sort.label])
@@ -101,11 +104,16 @@ export default async function EnquiriesPage({ searchParams }) {
   const search = typeof params?.q === 'string' ? params.q.trim() : '';
   const source = SOURCES.includes(params?.source) ? params.source : undefined;
   const plan = TRAINING_PLAN_KEYS.includes(params?.plan) ? params.plan : undefined;
+  const unseen = params?.unseen === '1';
+  const dateFrom = DATE_PATTERN.test(params?.dateFrom) ? params.dateFrom : undefined;
+  const dateTo = DATE_PATTERN.test(params?.dateTo) ? params.dateTo : undefined;
   // Falls back rather than 404s: a stale bookmark naming a sort that no longer
   // exists should still open the list.
   const sort = SORTS[params?.sort] ? params.sort : DEFAULT_SORT;
 
-  const rows = await listEnquiries({ status, archived, search, sort, source, plan });
+  const rows = await listEnquiries({
+    status, archived, search, sort, source, plan, unseen, dateFrom, dateTo,
+  });
 
   /*
    * Counts come from the unfiltered set so the status tabs keep showing what is
@@ -128,6 +136,9 @@ export default async function EnquiriesPage({ searchParams }) {
   if (search) exportParams.set('q', search);
   if (source) exportParams.set('source', source);
   if (plan) exportParams.set('plan', plan);
+  if (unseen) exportParams.set('unseen', '1');
+  if (dateFrom) exportParams.set('dateFrom', dateFrom);
+  if (dateTo) exportParams.set('dateTo', dateTo);
   if (sort !== DEFAULT_SORT) exportParams.set('sort', sort);
   const exportQuery = exportParams.toString();
   const exportHref = `/api/admin/export${exportQuery ? `?${exportQuery}` : ''}`;
@@ -146,6 +157,9 @@ export default async function EnquiriesPage({ searchParams }) {
     if (search) query.set('q', search);
     if (source) query.set('source', source);
     if (plan) query.set('plan', plan);
+    if (unseen) query.set('unseen', '1');
+    if (dateFrom) query.set('dateFrom', dateFrom);
+    if (dateTo) query.set('dateTo', dateTo);
     if (sort !== DEFAULT_SORT) query.set('sort', sort);
     const qs = query.toString();
     return `/admin/enquiries${qs ? `?${qs}` : ''}`;
@@ -159,12 +173,16 @@ export default async function EnquiriesPage({ searchParams }) {
     if (search) query.set('q', search);
     if (source) query.set('source', source);
     if (plan) query.set('plan', plan);
+    if (unseen) query.set('unseen', '1');
+    if (dateFrom) query.set('dateFrom', dateFrom);
+    if (dateTo) query.set('dateTo', dateTo);
     if (sort !== DEFAULT_SORT) query.set('sort', sort);
     const qs = query.toString();
     return `/admin/enquiries${qs ? `?${qs}` : ''}`;
   }
 
-  const filtering = search !== '' || source !== undefined || plan !== undefined;
+  const filtering = search !== '' || source !== undefined || plan !== undefined
+    || unseen || dateFrom !== undefined || dateTo !== undefined;
 
   /**
    * Creates one throwaway registration with random placeholder data.
