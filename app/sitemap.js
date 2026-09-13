@@ -1,6 +1,8 @@
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import { getPublishedEvents } from '../lib/appwrite/events';
+import { getPublishedPrograms } from '../lib/appwrite/programs';
 import { SITE_URL } from '../lib/site';
 
 const SITE_DIR = path.join(process.cwd(), 'app', '(site)');
@@ -15,7 +17,10 @@ const SITE_DIR = path.join(process.cwd(), 'app', '(site)');
 const HINTS = {
   '': { changeFrequency: 'weekly', priority: 1 },
   '/registration': { changeFrequency: 'monthly', priority: 0.9 },
+  '/programs': { changeFrequency: 'monthly', priority: 0.9 },
   '/about': { changeFrequency: 'monthly', priority: 0.8 },
+  // The listing changes whenever an entry is added, so it is crawled often.
+  '/news': { changeFrequency: 'weekly', priority: 0.8 },
   '/contact': { changeFrequency: 'yearly', priority: 0.7 },
 };
 
@@ -85,6 +90,59 @@ async function lastModifiedFor(route) {
 /** Re-generated hourly, matching the public pages' revalidate window. */
 export const revalidate = 3600;
 
+/**
+ * One entry per published programme.
+ *
+ * These cannot come from collectRoutes: they live under a `[slug]` segment,
+ * which has no single concrete URL on disk, so the filesystem walk skips it by
+ * design. The rows are the only place the real URLs exist.
+ *
+ * A failure returns nothing rather than throwing. A sitemap missing its
+ * programme pages is a smaller problem than a sitemap that 500s, which costs
+ * the crawler every other URL in the file too.
+ */
+async function programRoutes() {
+  try {
+    const programs = await getPublishedPrograms();
+    return programs.map((program) => ({
+      url: `${SITE_URL}/programs/${encodeURIComponent(program.slug)}`,
+      lastModified: program.updatedAt ? new Date(program.updatedAt) : new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    }));
+  } catch (error) {
+    console.error('[sitemap] programmes unavailable:', error.message);
+    return [];
+  }
+}
+
+/**
+ * One entry per published news post or event.
+ *
+ * Same reasoning as programRoutes: these live under a `[slug]` segment, which
+ * the filesystem walk skips because it has no single concrete URL on disk.
+ * These pages are the main reason the table exists -- each is an indexable page
+ * the site did not have before -- so leaving them out of the sitemap would
+ * waste most of the benefit.
+ *
+ * A failure returns nothing rather than throwing, for the same reason as the
+ * programme routes: a sitemap missing some URLs beats one that 500s.
+ */
+async function newsRoutes() {
+  try {
+    const entries = await getPublishedEvents();
+    return entries.map((entry) => ({
+      url: `${SITE_URL}/news/${encodeURIComponent(entry.slug)}`,
+      lastModified: entry.updatedAt ? new Date(entry.updatedAt) : new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    }));
+  } catch (error) {
+    console.error('[sitemap] news entries unavailable:', error.message);
+    return [];
+  }
+}
+
 export default async function sitemap() {
   const routes = await collectRoutes();
 
@@ -99,5 +157,7 @@ export default async function sitemap() {
   );
 
   // Highest priority first, so the important pages lead the file.
-  return entries.sort((a, b) => b.priority - a.priority);
+  const [programs, news] = await Promise.all([programRoutes(), newsRoutes()]);
+
+  return [...entries, ...programs, ...news].sort((a, b) => b.priority - a.priority);
 }

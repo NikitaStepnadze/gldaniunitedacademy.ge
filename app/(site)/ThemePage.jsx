@@ -1,5 +1,16 @@
 import { getContentMap, getSettingsMap } from '../../lib/appwrite/content';
-import { applyContactSettings, applyContent } from '../../lib/cms';
+import { getEventsOfKind, getFeaturedEvents } from '../../lib/appwrite/events';
+import { getFeaturedPrograms, getPublishedPrograms } from '../../lib/appwrite/programs';
+import {
+  applyContactSettings,
+  applyContent,
+  applyEvents,
+  applyEventsAll,
+  applyNews,
+  applyPrograms,
+} from '../../lib/cms';
+import { renderEventCards, renderNewsList } from '../../lib/events-markup';
+import { renderProgramCards } from '../../lib/programs-markup';
 import { getPageMarkup } from '../../lib/pages';
 
 /**
@@ -26,17 +37,69 @@ export default async function ThemePage({ route }) {
 
   let content = {};
   let settings = {};
+  /*
+   * Each list is fetched unconditionally and every substitution is a no-op on a
+   * page that does not carry its marker -- applyEvents and its siblings return
+   * the markup untouched when the placeholder is absent. Keying the fetches off
+   * the route would put the same fact in two places and leave a page carrying a
+   * placeholder silently unfilled.
+   */
+  let events = [];
+  let programs = [];
+  let news = [];
+
+  /*
+   * How many rows each listing asks for is the one thing that does depend on
+   * the route.
+   *
+   * The home page's sections are fixed-size rows showing the flagged entries,
+   * while /programs and /news are the full listings. Both render the identical
+   * card markup, so this is a difference of how many rows are asked for, not of
+   * what is done with them.
+   */
+  const allPrograms = route === 'programs';
+  const isNews = route === 'news';
+
   try {
-    // Both reads are cached under the same tag, so this is one round trip's
-    // worth of work on a cold cache and none on a warm one.
-    [content, settings] = await Promise.all([getContentMap(), getSettingsMap()]);
+    // Every read is cached under its own tag, so this is one round trip's worth
+    // of work on a cold cache and none on a warm one.
+    [content, settings, events, programs, news] = await Promise.all([
+      getContentMap(),
+      getSettingsMap(),
+      isNews ? getEventsOfKind('event') : getFeaturedEvents(),
+      allPrograms ? getPublishedPrograms() : getFeaturedPrograms(),
+      // Only /news lists the blog cards; nothing else carries their marker.
+      isNews ? getEventsOfKind('news') : [],
+    ]);
   } catch (error) {
     console.error('[cms] content unavailable, using theme defaults:', error.message);
   }
 
+  /*
+   * The same cards serve both event placeholders.
+   *
+   * `<!--cms:events-->` is the home page's two-card row and
+   * `<!--cms:events-all-->` is the full listing on /news, but no page carries
+   * both -- so whichever marker is present gets the list this route asked for,
+   * and the other substitution finds nothing to do.
+   */
+  const eventCards = renderEventCards(events);
+
   // Contact details are a site-wide setting rather than a per-element content
   // row, so they are substituted after the content overrides are in place.
-  const html = applyContactSettings(applyContent(markup, content), settings);
+  const html = applyNews(
+    applyEventsAll(
+      applyPrograms(
+        applyEvents(
+          applyContactSettings(applyContent(markup, content), settings),
+          eventCards
+        ),
+        renderProgramCards(programs)
+      ),
+      eventCards
+    ),
+    renderNewsList(news)
+  );
 
   return <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: html }} />;
 }

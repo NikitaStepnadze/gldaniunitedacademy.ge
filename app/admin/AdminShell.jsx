@@ -13,6 +13,8 @@ import { isAuthenticated } from '../../lib/appwrite/auth';
 const LINKS = [
   { href: '/admin/enquiries', label: 'განაცხადები' },
   { href: '/admin/content', label: 'ტექსტები და ფოტოები' },
+  { href: '/admin/programs', label: 'პროგრამები' },
+  { href: '/admin/news', label: 'სიახლეები' },
   { href: '/admin/design', label: 'ფერები' },
 ];
 

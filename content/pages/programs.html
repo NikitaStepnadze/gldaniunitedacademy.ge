@@ -6,7 +6,7 @@
             <div class="square"></div>
             <div class="square"></div>
             <div class="square"></div>
-          </div>
+        </div>
     </div>
     <!-- /preload -->
     <!-- Header -->
@@ -49,10 +49,10 @@
                         <ul class="menu">
                             <li><a href="/">მთავარი</a></li>
                             <li><a href="/about">ჩვენ შესახებ</a></li>
-                            <li><a href="/programs">პროგრამები</a></li>
+                            <li class="current-menu-item"><a href="/programs">პროგრამები</a></li>
                             <li><a href="/registration">რეგისტრაცია</a></li>
                             <li><a href="/news">სიახლეები</a></li>
-                            <li class="current-menu-item"><a href="/contact">კონტაქტი</a></li>
+                            <li><a href="/contact">კონტაქტი</a></li>
                         </ul><!-- /.menu -->
                     </nav><!-- /.mainnav -->
                 </div><!-- /.nav-wrap -->
@@ -99,19 +99,18 @@
     </div>
 
     <!-- Page Title -->
-    <div class="page-title page-title-blog page-title-contact">
+    <div class="page-title page-title-about">
         <div class="themeflat-container">
             <div class="row">
                 <div class="col-md-12">
                     <div class="page-title-heading">
-                        <h1 class="title">კონტაქტი</h1>
+                        <h1 class="title" data-cms="programs.hero.title">პროგრამები</h1>
                     </div><!-- /.page-title-captions -->
                     <div class="breadcrumbs">
                         <ul>
                             <li><a href="/">მთავარი</a></li>
                             <li><i class="icon-Arrow---Right-2"></i></li>
-                            
-                            <li><a>კონტაქტი</a></li>
+                            <li><a>პროგრამები</a></li>
                         </ul>
                     </div><!-- /.breadcrumbs -->
 
@@ -120,90 +119,21 @@
         </div><!-- /.container -->
     </div><!-- /.page-title -->
 
-    <!-- Map Contact us -->
-    <div class="map-contact-us">
-        <div class="map-contact relative">
-            <iframe title="გლდანი იუნაითედ აკადემია" src="https://www.google.com/maps?q=41.7931358,44.8267380&z=17&output=embed&hl=ka" width="100%" height="460" style="border:0;display:block" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-        </div>
-    </div>
-    <!-- Map Contact us -->
-
-    <!-- Contact us -->
-    <div class="tf-contact-page main-content">
+    <!-- Widget Course -->
+    <div class="tf-widget-course main-content" id="programs">
         <div class="themeflat-container">
-            <div class="row contact-page">
-                <div class="col-md-5">
-                    <div class="contact-page-content">
-                        <div class="content-page-title">
-                            <span class="wow fadeInUp animated" data-cms="contact.hero.eyebrow">კონტაქტი</span>
-                            <h2 class="wow fadeInUp animated" data-cms="contact.hero.title">დაგვიკავშირდით</h2>
-                            <p class="post wow fadeInUp animated" data-cms="contact.hero.text">გაქვთ შეკითხვა აკადემიის შესახებ? დაგვიკავშირდით ტელეფონით ან შეავსეთ ფორმა — დაგიკავშირდებით უმოკლეს ვადაში.</p>
-                        </div>
-                        <div class="list-contact-us">
-                            <div class="inner">
-                                <span class="wow fadeInUp animated">ტელეფონი:</span>
-                                <h6 class="wow fadeInUp animated"><a href="tel:+995551390993">551 39 09 93</a></h6>
-                            </div>
-                            <div class="inner">
-                                <span class="wow fadeInUp animated">ელფოსტა:</span>
-                                <a href="mailto:gldani.united@gmail.com" class="wow fadeInUp animated">
-                                    <h6>gldani.united@gmail.com</h6>
-                                </a>
-                            </div>
-                            <div class="inner">
-                                <span class="wow fadeInUp animated">მისამართი:</span>
-                                <h6 class="wow fadeInUp animated"><a href="https://maps.app.goo.gl/ZpRe6mFbU4BrJxFe8" target="_blank" rel="noopener">გლდანი 1 მიკრორაიონი, 39 საჯარო სკოლის ტერიტორია</a></h6>
-                            </div>
-                        </div>
-                        <div class="social-contact">
-                            <ul class="social-media wow fadeInUp animated">
-                                <li>
-                                    <a href="twitter.com"><i class="icon-twitter"></i></a>
-                                </li>
-                                <li>
-                                    <a href="dribbble.com"><i class="icon-dribbble"></i></a>
-                                </li>
-                                <li>
-                                    <a href="behance.com"><i class="icon-behance"></i></a>
-                                </li>
-                                <li>
-                                    <a href="pinterest.com"><i class="icon-pinterest"></i></a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-7">
-                    <div class="contact-page-form">
-                        <form method="post" id="contactform-page" class="contact-page form-submit" action="/"
-                            accept-charset="utf-8" novalidate="novalidate">
-                            <div class="text-wrap clearfix">
-                                <fieldset class="name-wrap">
-                                    <input type="text" id="name" class="tb-my-input" name="name" tabindex="1"
-                                        placeholder="სახელი და გვარი" value="" size="32" aria-required="true" required="">
-                                </fieldset>
-                                <fieldset class="phone-wrap">
-                                    <input type="tel" id="phone" class="tb-my-input" name="phone" tabindex="2"
-                                        placeholder="ტელეფონის ნომერი" value="" size="32" aria-required="true" required="">
-                                </fieldset>
-                                <fieldset class="email-wrap">
-                                    <input type="email" id="email" class="tb-my-input" name="email" tabindex="3"
-                                        placeholder="ელფოსტა" value="" size="32" aria-required="true" required="">
-                                </fieldset>
-                            </div>
-                            <fieldset class="message-wrap">
-                                <textarea id="comment-message" name="message" rows="4" tabindex="4"
-                                    placeholder="თქვენი შეკითხვა" aria-required="true" required=""></textarea>
-                            </fieldset>
-                            <button name="submit" type="submit" id="comment-reply"
-                                class="flat-button btn-submit-comment"><span>გაგზავნა WhatsApp-ით</span></button>
-                        </form>
-                    </div>
+            <div class="tf-course">
+                <!-- header style v1 -->
+                <div class="title-box center-title-box title-large">
+                    <span class="sub-title wow fadeInUp animated" data-cms="programs.intro.eyebrow">ჩვენი პროგრამები</span>
+                    <h2 class="title-section wow fadeInUp animated" data-cms="programs.intro.title">ასაკობრივი ჯგუფები<br> და პროგრამები</h2>
+                </div><!-- header style v1 -->
+                <div class="row">
+                    <!--cms:programs-->
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Contact us -->
+    </div><!-- Widget Course -->
 
     <!-- Footer -->
     <footer class="footer background-black">
@@ -233,18 +163,18 @@
 
                     <div class="col-xxl-4 col-lg-4 col-xl-4 col-md-6 link-footer">
                         <div class="widget widget_menu-footer">
-                            <h5 class="widget-title" data-cms="contact.footer.col1.title">სწრაფი ბმულები</h5>
+                            <h5 class="widget-title" data-cms="about.footer.col1.title">სწრაფი ბმულები</h5>
                             <ul class="menu-footer">
                                 <li><a href="/">მთავარი</a></li>
                                 <li><a href="/about">ჩვენ შესახებ</a></li>
                                 <li><a href="/programs">პროგრამები</a></li>
                                 <li><a href="/registration">რეგისტრაცია</a></li>
                                 <li><a href="/news">სიახლეები</a></li>
-                            <li><a href="/contact">კონტაქტი</a></li>
+                                <li><a href="/contact">კონტაქტი</a></li>
                             </ul><!-- /.menu -->
                         </div><!-- /.widget -->
                         <div class="widget widget_menu-footer">
-                            <h5 class="widget-title" data-cms="contact.footer.col2.title">აკადემია</h5>
+                            <h5 class="widget-title" data-cms="about.footer.col2.title">აკადემია</h5>
                             <ul class="menu-footer">
                                 <li><a href="/programs">ასაკობრივი ჯგუფები</a></li>
                                 <li><a href="/#coaches">მწვრთნელები</a></li>
@@ -256,7 +186,7 @@
 
                     <div class="col-xxl-4 col-lg-4 col-xl-4 col-md-6 new-letter">
                         <div class="widget widget_text widget_menu-footer">
-                            <h5 class="widget-title" data-cms="contact.footer.col3.title">კონტაქტი</h5>
+                            <h5 class="widget-title" data-cms="about.footer.col3.title">კონტაქტი</h5>
                             <div class="menu-footer">
                                 <div class="text-phone">
                                     <svg width="36" height="37" viewBox="0 0 36 37" fill="none"
@@ -322,7 +252,6 @@
     
     <!-- Modal-login -->
     <!-- Modal-login -->
-
        <!-- modal find_size -->
        
     <!-- /modal find_size -->

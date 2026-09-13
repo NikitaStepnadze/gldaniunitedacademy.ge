@@ -24,6 +24,8 @@ const PAGES = [
   { id: 'about', route: 'about', label: 'ჩვენ შესახებ' },
   { id: 'contact', route: 'contact', label: 'კონტაქტი' },
   { id: 'registration', route: 'registration', label: 'რეგისტრაცია' },
+  { id: 'programs', route: 'programs', label: 'პროგრამები' },
+  { id: 'news', route: 'news', label: 'სიახლეები' },
 ];
 
 /** Debounce for pushing the draft into the preview, in ms. */

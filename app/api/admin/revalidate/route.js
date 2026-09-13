@@ -1,5 +1,10 @@
 import { isAuthenticated } from '../../../../lib/appwrite/auth';
-import { PUBLIC_ROUTES, revalidateSite } from '../../../../lib/revalidate';
+import {
+  PUBLIC_ROUTES,
+  revalidateNews,
+  revalidatePrograms,
+  revalidateSite,
+} from '../../../../lib/revalidate';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +21,17 @@ export async function POST() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const ok = revalidateSite();
+  /*
+   * Every cache, not just the CMS one.
+   *
+   * This endpoint's whole reason to exist is content changed outside the panel
+   * -- in the Appwrite console or by a script -- and the programmes and events
+   * tables are exactly the kind of thing edited that way. Clearing only the CMS
+   * tag would leave a row added in the console invisible for up to an hour,
+   * which is the problem this route is meant to solve.
+   */
+  const ok = [revalidateSite(), revalidatePrograms(), revalidateNews()].every(
+    Boolean
+  );
   return Response.json({ ok, revalidated: PUBLIC_ROUTES });
 }

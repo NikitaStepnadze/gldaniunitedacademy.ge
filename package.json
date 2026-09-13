@@ -12,7 +12,10 @@
     "appwrite:seed": "node scripts/appwrite-seed.mjs",
     "appwrite:admin": "node scripts/appwrite-create-admin.mjs",
     "appwrite:sync-content": "node scripts/appwrite-sync-content.mjs",
-    "appwrite:sync-cms": "node scripts/appwrite-sync-cms.mjs"
+    "appwrite:sync-cms": "node scripts/appwrite-sync-cms.mjs",
+    "appwrite:seed-programs": "node scripts/appwrite-seed-programs.mjs",
+    "appwrite:seed-news": "node scripts/appwrite-seed-news.mjs",
+    "appwrite:relatinise-slugs": "node scripts/appwrite-relatinise-slugs.mjs"
   },
   "dependencies": {
     "appwrite": "^26.2.0",

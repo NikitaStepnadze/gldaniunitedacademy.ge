@@ -68,14 +68,17 @@ const SECTION_LABELS = {
   coach2: 'მწვრთნელი 2',
   coach3: 'მწვრთნელი 3',
   coach4: 'მწვრთნელი 4',
-  program1: 'პროგრამა 1',
-  program2: 'პროგრამა 2',
-  program3: 'პროგრამა 3',
-  news1: 'სიახლე 1',
-  news2: 'სიახლე 2',
-  news3: 'სიახლე 3',
-  news4: 'სიახლე 4',
+  // The programme cards moved into their own table (see lib/appwrite/programs.js)
+  // and are edited under 'პროგრამები' in the admin panel, so program1..3 no longer
+  // appear as markers here. These two are the /programs page's own heading.
+  intro: 'გვერდის შესავალი',
+  // The news cards moved into the events table (see lib/appwrite/events.js) and
+  // are edited under 'სიახლეები' in the admin panel, so news1..4 no longer
+  // appear as markers. What is left on the /news page is its own chrome: the
+  // hero, the two list headings and the footer.
   news: 'სიახლეები',
+  list: 'სიახლეების სია',
+  events: 'ღონისძიებების სია',
   review1: 'შეფასება 1',
   review2: 'შეფასება 2',
   review3: 'შეფასება 3',
@@ -103,6 +106,7 @@ const SECTION_LABELS = {
 const FIELD_LABELS = {
   title: 'სათაური',
   eyebrow: 'ზედა წარწერა',
+  breadcrumb: 'ბილიკის წარწერა',
   text: 'ტექსტი',
   badge: 'ნიშანი',
   formTitle: 'ფორმის სათაური',

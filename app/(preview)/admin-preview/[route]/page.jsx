@@ -2,7 +2,22 @@ import { notFound } from 'next/navigation';
 
 import { isAuthenticated } from '../../../../lib/appwrite/auth';
 import { getContentMap, getSettingsMap } from '../../../../lib/appwrite/content';
-import { applyContactSettings, applyContent, buildColorOverrides } from '../../../../lib/cms';
+import { getEventsOfKind, getFeaturedEvents } from '../../../../lib/appwrite/events';
+import {
+  getFeaturedPrograms,
+  getPublishedPrograms,
+} from '../../../../lib/appwrite/programs';
+import {
+  applyContactSettings,
+  applyContent,
+  applyEvents,
+  applyEventsAll,
+  applyNews,
+  applyPrograms,
+  buildColorOverrides,
+} from '../../../../lib/cms';
+import { renderEventCards, renderNewsList } from '../../../../lib/events-markup';
+import { renderProgramCards } from '../../../../lib/programs-markup';
 import { getPageMarkup } from '../../../../lib/pages';
 
 import PreviewFrame from './PreviewFrame';
@@ -26,7 +41,14 @@ import PreviewFrame from './PreviewFrame';
  * segment reaches a filesystem path, and a traversal like `..%2F..%2F.env`
  * must not be able to read a file outside content/pages.
  */
-const ROUTES = new Set(['index', 'about', 'contact', 'registration']);
+const ROUTES = new Set([
+  'index',
+  'about',
+  'contact',
+  'registration',
+  'programs',
+  'news',
+]);
 
 export const dynamic = 'force-dynamic';
 
@@ -41,16 +63,54 @@ export default async function PreviewPage({ params }) {
   let content = {};
   let settings = {};
   let colorOverrides = null;
+  /*
+   * The card listings are read here too, not only on the public pages.
+   *
+   * Without them the preview shows the raw `<!--cms:...-->` comments where the
+   * cards belong -- or, worse, the empty-list branch strips the whole section,
+   * so an admin editing the heading above it sees the section vanish. The
+   * preview has to make the same substitutions the public page makes, for the
+   * same reason it renders the same markup: what it shows has to be the site.
+   */
+  let events = [];
+  let programs = [];
+  let news = [];
+
+  // Same route branch as ThemePage: the listing pages show every row, the home
+  // page only the flagged ones.
+  const allPrograms = route === 'programs';
+  const isNews = route === 'news';
+
   try {
-    [content, settings] = await Promise.all([getContentMap(), getSettingsMap()]);
+    [content, settings, events, programs, news] = await Promise.all([
+      getContentMap(),
+      getSettingsMap(),
+      isNews ? getEventsOfKind('event') : getFeaturedEvents(),
+      allPrograms ? getPublishedPrograms() : getFeaturedPrograms(),
+      isNews ? getEventsOfKind('news') : [],
+    ]);
     colorOverrides = buildColorOverrides(settings);
   } catch (error) {
     console.error('[preview] CMS unavailable, showing theme defaults:', error.message);
   }
 
-  // Same substitution the public page makes, so the preview shows the saved
-  // contact details rather than the theme's originals.
-  const html = applyContactSettings(applyContent(markup, content), settings);
+  const eventCards = renderEventCards(events);
+
+  // Same substitutions the public page makes, so the preview shows the saved
+  // contact details and the real cards rather than the theme's originals.
+  const html = applyNews(
+    applyEventsAll(
+      applyPrograms(
+        applyEvents(
+          applyContactSettings(applyContent(markup, content), settings),
+          eventCards
+        ),
+        renderProgramCards(programs)
+      ),
+      eventCards
+    ),
+    renderNewsList(news)
+  );
 
   return (
     <>

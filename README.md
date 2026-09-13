@@ -88,12 +88,21 @@ re-renders, so opting its children out of hydration checking is safe.
 | `/` | `index.html` |
 | `/about` | `about.html` |
 | `/contact` | `contact.html` |
+| `/registration` | `registration.html` |
+| `/programs` | `programs.html` |
+| `/programs/[slug]` | `program-detail.html` + one row of the `programs` table |
+| `/news` | `news.html` |
+| `/news/[slug]` | `news-single.html` + one row of the `events` table |
 
-The template's other 11 pages (shop, cart, checkout, wishlist, blog, events,
-and the alternate home layouts) were removed — the academy has no webshop and
-no news section, and leaving them routable would have exposed untranslated
-English. Their markup still sits unused in `content/pages/`; to bring one
-back, re-add `app/<route>/page.jsx` **and translate the page first**.
+The last two pairs are one template each, rendered once per database row —
+adding a programme or a news entry in the admin panel adds a page, with no
+deploy. See [Programmes, news and events](#programmes-news-and-events).
+
+The template's remaining pages (shop, cart, checkout, wishlist and the
+alternate home layouts) were removed — the academy has no webshop, and leaving
+them routable would have exposed untranslated English. Their markup still sits
+unused in `content/pages/`; to bring one back, re-add `app/<route>/page.jsx`
+**and translate the page first**.
 
 ## Branding
 
@@ -190,6 +199,85 @@ theme assets and applies the editor's draft over `postMessage`. It lives in its
 own route group (`app/(preview)/`) so it gets its own `<html>`; nested under the
 admin layout it produced two documents and the admin stylesheet leaked in. It
 404s without an admin session and is never indexed.
+
+## Programmes, news and events
+
+Two kinds of content are **rows an admin creates**, not markup an admin edits:
+the training programmes, and the news entries and events. They work the same
+way and are worth understanding together.
+
+The difference from `data-cms` matters. A CMS row overrides text the theme
+already ships, so it can reword the third programme card but never add a
+fourth — which fields exist comes from the markers written into the HTML. These
+are tables instead, so an admin adds a row and the site gains a card **and a
+page**, with no deploy.
+
+| | Programmes | News and events |
+| --- | --- | --- |
+| Table | `programs` | `events` |
+| Admin | `/admin/programs` | `/admin/news` |
+| Listing | `/programs` | `/news` |
+| Page per row | `/programs/<slug>` | `/news/<slug>` |
+| On the home page | 3 flagged programmes | 2 flagged events |
+| Data layer | `lib/appwrite/programs.js` | `lib/appwrite/events.js` |
+| Card markup | `lib/programs-markup.js` | `lib/events-markup.js` |
+
+**Why a page per row.** Every entry is a crawlable URL with its own heading,
+photo, body and `<title>`. Before this, six cards on the home page all linked
+to the contact form, so the site offered a crawler one page where it now offers
+eight. The sitemap lists each one (`app/sitemap.js`).
+
+**Two kinds of entry.** The `events` table carries both, told apart by its
+`kind` column: `event` draws the schedule card (photo, place, date, time, a
+price panel) and `news` draws the blog card (photo, category, headline,
+byline). One table rather than two, because everything downstream — the slug,
+the page, the sitemap entry — treats them identically; only which fields a card
+draws differs. The admin editor shows the fields that kind actually uses.
+
+**Where the cards come from.** The page HTML carries a placeholder comment
+(`<!--cms:events-->`, `<!--cms:news-->`, `<!--cms:programs-->`,
+`<!--cms:events-all-->`) which `lib/cms.js` fills at render time. A placeholder
+with nothing to show removes its whole section rather than leaving a heading
+over an empty strip. `ThemePage` decides how many rows to ask for: the home
+page's sections take the flagged rows, the listing pages take every published
+one.
+
+**Setup.** After `npm run appwrite:migrate` creates the tables:
+
+```bash
+npm run appwrite:seed-programs   # the three age groups the theme shipped with
+npm run appwrite:seed-news       # the two events and four posts it shipped with
+```
+
+Both are idempotent — a row whose slug already exists is left alone, so a
+re-run never overwrites an admin's edits and never duplicates.
+
+**Slugs are URLs.** They are derived from the title once, on creation, and then
+left alone: rewording a headline must not break a link someone shared or a page
+Google has indexed. The seeds write theirs out literally for the same reason.
+
+Georgian titles are **transliterated to Latin** (`ზაფხულის საფეხბურთო ბანაკი` →
+`zapkhulis-sapekhburto-banaki`) by `lib/slug.js`, using the Georgian national
+romanisation — the one on road signs and in passports. Native Georgian slugs are
+valid URLs and were what the site shipped first, but Georgian is three bytes per
+character in UTF-8: a 26-character headline becomes ~120 bytes of percent-encoded
+hex the moment it is pasted into Facebook, WhatsApp or SMS, and that same encoded
+form is what Search Console and Analytics report. Since most of this site's
+traffic arrives through exactly those channels, Latin slugs win. Nothing is lost
+for readers — almost nobody reads a slug, and the headline in the search result
+is Georgian either way.
+
+If a table ever holds Georgian slugs again (an old backup, a hand-typed row):
+
+```bash
+npm run appwrite:relatinise-slugs            # dry run — show what would change
+npm run appwrite:relatinise-slugs -- --apply # write it
+```
+
+It rewrites only non-ASCII slugs, deriving each from its row's own title through
+the same `slugify` the admin panel uses, and leaves anything already Latin alone.
+**It is a one-off for URLs nobody has shared yet** — it deliberately breaks the
+immutability rule above, so once the site is live, add a redirect instead.
 
 ### Placeholders to replace
 

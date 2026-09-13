@@ -31,6 +31,8 @@ const databaseId = process.env.APPWRITE_DATABASE_ID ?? 'academy';
 const CONTENT_TABLE = process.env.APPWRITE_CONTENT_TABLE_ID ?? 'content';
 const SETTINGS_TABLE = process.env.APPWRITE_SETTINGS_TABLE_ID ?? 'settings';
 const ENQUIRIES_TABLE = process.env.APPWRITE_ENQUIRIES_TABLE_ID ?? 'enquiries';
+const EVENTS_TABLE = process.env.APPWRITE_EVENTS_TABLE_ID ?? 'events';
+const PROGRAMS_TABLE = process.env.APPWRITE_PROGRAMS_TABLE_ID ?? 'programs';
 const FILES_BUCKET = process.env.APPWRITE_ENQUIRY_FILES_BUCKET_ID ?? 'enquiry-files';
 
 if (!projectId || !apiKey) {
@@ -304,6 +306,161 @@ const SCHEMA = [
       { key: 'idx_status', type: 'key', columns: ['status'] },
       { key: 'idx_archived', type: 'key', columns: ['archived'] },
       { key: 'idx_source', type: 'key', columns: ['source'] },
+    ],
+  },
+  {
+    tableId: EVENTS_TABLE,
+    name: 'Events',
+    description: 'News and events, each rendered as its own public page',
+    columns: [
+      /*
+       * The URL segment, e.g. "zafkhulis-banaki" in /news/zafkhulis-banaki.
+       *
+       * Unique and immutable once an entry is published: it is what search
+       * engines index and what anyone who shared the link typed. The admin
+       * form derives it from the title on creation and then leaves it alone,
+       * so renaming a headline never breaks an indexed URL.
+       */
+      { kind: 'string', key: 'slug', size: 160, required: true },
+      { kind: 'string', key: 'title', size: 200, required: true },
+      /*
+       * Which of the two card layouts this entry uses.
+       *
+       * 'event' is the schedule card -- photo, three meta lines, a price panel
+       * -- shown in the home page's events section and at the top of /news.
+       * 'news' is the blog card: photo, tag, headline, author and date.
+       *
+       * One table rather than two because both kinds are the same thing to
+       * everything downstream: a row an admin writes, a slug, and a public page
+       * at /news/<slug>. Splitting them would duplicate the editor, the page
+       * route and the sitemap for the sake of which fields a card happens to
+       * draw.
+       */
+      { kind: 'string', key: 'kind', size: 16, required: false, xdefault: 'news' },
+      // The pill above a news card's headline ('ვარჯიში', 'ტურნირი').
+      { kind: 'string', key: 'tag', size: 80, required: false },
+      // The byline on a news card. Free text so it can read 'ავტორი: აკადემია'
+      // or carry a coach's name without a second field.
+      { kind: 'string', key: 'author', size: 120, required: false },
+      /*
+       * The three meta lines under the headline, shown beside their pin,
+       * calendar and clock icons on the card.
+       *
+       * Free text rather than a real date: the theme prints them verbatim
+       * ("20 სექტემბერი", "დაწყება 11:00 საათზე") and the admin writes them in
+       * Georgian. A datetime column would force a locale format nobody asked
+       * for and would not hold "until finish".
+       */
+      { kind: 'string', key: 'location', size: 200, required: false },
+      { kind: 'string', key: 'date', size: 100, required: false },
+      { kind: 'string', key: 'time', size: 100, required: false },
+      // The price block on the right of the card: a label ("მონაწილეობა") over
+      // a value ("უფასო").
+      { kind: 'string', key: 'priceLabel', size: 80, required: false },
+      { kind: 'string', key: 'priceValue', size: 80, required: false },
+      // The card's call to action, and the heading above the body on the
+      // entry's own page.
+      { kind: 'string', key: 'ctaLabel', size: 80, required: false },
+      // The card photo and the hero of the entry's page. A /api/media/<id> URL
+      // written by the admin's image picker, or empty for the theme default.
+      { kind: 'string', key: 'image', size: 512, required: false },
+      // A one-paragraph summary, used as the page's meta description and as
+      // the lead above the body.
+      { kind: 'string', key: 'excerpt', size: 1000, required: false },
+      /*
+       * The entry's own page content: plain text, blank line between
+       * paragraphs. Stored unformatted and escaped at render time -- an admin
+       * pasting markup must not be able to script the public site.
+       */
+      { kind: 'string', key: 'body', size: 20000, required: false },
+      /*
+       * Whether this entry appears in the home page's events section.
+       *
+       * Only meaningful for kind 'event': news entries live on /news and are
+       * not shown on the home page at all. The admin panel enforces the limit
+       * of two; the renderer takes the first two regardless, so a third flag
+       * set by hand cannot push a card into a layout with room for two.
+       */
+      { kind: 'boolean', key: 'featured', required: false, xdefault: false },
+      // Unpublished entries stay out of the listing, the home section, the
+      // sitemap and their own URL -- a draft is invisible, not merely unlinked.
+      { kind: 'boolean', key: 'published', required: false, xdefault: true },
+      // Display order, low to high. The admin reorders with the up/down
+      // buttons in the list rather than typing a number.
+      { kind: 'integer', key: 'order', required: false, xdefault: 0 },
+    ],
+    indexes: [
+      { key: 'idx_slug', type: 'unique', columns: ['slug'] },
+      { key: 'idx_featured', type: 'key', columns: ['featured'] },
+      { key: 'idx_published', type: 'key', columns: ['published'] },
+      { key: 'idx_kind', type: 'key', columns: ['kind'] },
+    ],
+  },
+  {
+    tableId: PROGRAMS_TABLE,
+    name: 'Programs',
+    description: 'Age-group training programmes shown on the home page and /programs',
+    columns: [
+      /*
+       * The URL segment, e.g. "damtsqebta-jgufi" in /programs/damtsqebta-jgufi.
+       *
+       * Unique, and left alone once a programme is created: it is what anyone
+       * who bookmarked or shared the page typed. The admin form derives it from
+       * the title on creation only, so renaming a programme never breaks a link.
+       */
+      { kind: 'string', key: 'slug', size: 160, required: true },
+      { kind: 'string', key: 'title', size: 200, required: true },
+      /*
+       * The age badge on the card photo, split into its number and its unit so
+       * the theme can keep printing them on two lines ("5-8" over "წელი") the
+       * way the static markup did.
+       */
+      { kind: 'string', key: 'ageRange', size: 40, required: false },
+      { kind: 'string', key: 'ageUnit', size: 40, required: false, xdefault: 'წელი' },
+      /*
+       * The two meta lines under the card photo, each beside its own icon.
+       *
+       * `activityLabel` is the left one -- the word the theme hardcoded as
+       * "ვარჯიში" and which an admin could not previously edit. It is a column
+       * rather than a fixed string precisely because that was the gap: a
+       * programme that is a camp or a tournament rather than regular training
+       * needs to be able to say so.
+       */
+      { kind: 'string', key: 'activityLabel', size: 80, required: false, xdefault: 'ვარჯიში' },
+      { kind: 'string', key: 'frequency', size: 120, required: false },
+      // The card photo and the hero of the programme's own page. An
+      // /api/media/<id> URL from the admin image picker, or empty for the
+      // theme's own default image.
+      { kind: 'string', key: 'image', size: 512, required: false },
+      // The paragraph under the title on the card, and the lead on the
+      // programme's page. Also used as that page's meta description.
+      { kind: 'string', key: 'description', size: 2000, required: false },
+      /*
+       * The programme page's own content: plain text, blank line between
+       * paragraphs. Stored unformatted and escaped at render time -- an admin
+       * pasting markup must not be able to script the public site.
+       */
+      { kind: 'string', key: 'body', size: 20000, required: false },
+      // Price block on the programme's page: a label over a value.
+      { kind: 'string', key: 'priceLabel', size: 80, required: false },
+      { kind: 'string', key: 'priceValue', size: 80, required: false },
+      /*
+       * Whether this programme appears in the home page's card section, which
+       * is a three-column row. The admin panel steers this rather than the
+       * public page guessing which of a growing list belong there.
+       */
+      { kind: 'boolean', key: 'featured', required: false, xdefault: true },
+      // An unpublished programme is invisible: out of the listing, the home
+      // section, the sitemap and its own URL -- a draft, not merely unlinked.
+      { kind: 'boolean', key: 'published', required: false, xdefault: true },
+      // Display order, low to high. The admin reorders with the up/down
+      // buttons in the list rather than typing a number.
+      { kind: 'integer', key: 'order', required: false, xdefault: 0 },
+    ],
+    indexes: [
+      { key: 'idx_program_slug', type: 'unique', columns: ['slug'] },
+      { key: 'idx_program_featured', type: 'key', columns: ['featured'] },
+      { key: 'idx_program_published', type: 'key', columns: ['published'] },
     ],
   },
 ];

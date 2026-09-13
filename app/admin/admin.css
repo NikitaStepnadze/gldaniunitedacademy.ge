@@ -1468,3 +1468,34 @@
   font-size: 13px;
   color: var(--ink-soft);
 }
+
+/*
+ * The reorder cell, in the programmes table and in the two news tables.
+ *
+ * The two arrows are separate one-button forms -- a server action binds its
+ * direction at render time, so they cannot share one -- and a form is a block
+ * element, so without this they stack and the row grows to two lines.
+ */
+.program-order-cell,
+.entry-order-cell {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.program-order-cell form,
+.entry-order-cell form {
+  margin: 0;
+}
+
+/*
+ * Square, so the two arrows read as a pair of nudge controls rather than as
+ * two buttons that happen to hold a character each.
+ */
+.program-order-cell .admin-btn.small,
+.entry-order-cell .admin-btn.small {
+  min-width: 28px;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
